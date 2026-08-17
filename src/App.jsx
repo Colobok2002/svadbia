@@ -1,10 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultGuest, guests, rsvpFormUrl } from "./data/guests";
+import WelcomeSlide from "./components/WelcomeSlide";
+import DreamSlide from "./components/DreamSlide";
 
-const getGuest = () => {
+import childPinkA from "./assets/figma/raw-01.png";
+import weddingPolaroidA from "./assets/figma/raw-03.png";
+import calendarInviteA from "./assets/figma/raw-05.png";
+import weddingPolaroidB from "./assets/figma/raw-07.png";
+import childhoodWeddingA from "./assets/figma/raw-08.png";
+import heartLineA from "./assets/figma/raw-09.png";
+import friendsA from "./assets/figma/raw-10.png";
+import childhoodWeddingB from "./assets/figma/raw-11.png";
+import calendarInviteB from "./assets/figma/raw-12.png";
+import friendsB from "./assets/figma/raw-14.png";
+import heartB from "./assets/figma/raw-15.png";
+import heartLineB from "./assets/figma/raw-16.png";
+import childPinkB from "./assets/figma/raw-17.png";
+import clickHand from "./assets/figma/raw-18.png";
+
+const slides = [
+  ["welcome", "Начало"],
+  ["grow", "История"],
+  ["together", "Мы"],
+  ["invite", "Приглашение"],
+  ["registry", "Роспись"],
+  ["celebration", "Праздник"],
+  ["date", "Дата"],
+  ["details", "Детали"],
+  ["rsvp", "Ответ"],
+];
+
+function getGuest() {
   const hash = window.location.hash.slice(1);
   const hashParams = new URLSearchParams(hash);
-  const hashId = decodeURIComponent(hashParams.get("id") || hash)
+  const rawHashId = hashParams.get("id") || hash;
+  const hashId = slides.some(([slideId]) => slideId === rawHashId) ? "" : decodeURIComponent(rawHashId)
     .trim()
     .toLowerCase();
   const queryId = new URLSearchParams(window.location.search)
@@ -13,127 +43,171 @@ const getGuest = () => {
     .toLowerCase();
   const id = hashId || queryId;
   return { ...defaultGuest, ...(guests[id] || {}), id };
-};
-
-function Accordion({ number, title, children }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <article className={`detail ${open ? "detail--open" : ""}`}>
-      <button
-        className="detail__button"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-      >
-        <span className="detail__number">{number}</span>
-        <span>{title}</span>
-        <span className="detail__plus">{open ? "−" : "+"}</span>
-      </button>
-      <div className="detail__body">
-        <div>{children}</div>
-      </div>
-    </article>
-  );
 }
 
-function Intro({ onComplete, opening }) {
-  const video = useRef(null);
-  const [ready, setReady] = useState(false);
-  const [muted, setMuted] = useState(true);
-
-  useEffect(() => {
-    const el = video.current;
-    if (!el) return undefined;
-    const blockSeeking = () => {
-      if (el.currentTime > 0 && !el.ended) el.currentTime = el.currentTime;
-    };
-    el.addEventListener("seeking", blockSeeking);
-    el.play().catch(() => setReady(true));
-    return () => el.removeEventListener("seeking", blockSeeking);
-  }, []);
-
-  return (
-    <section
-      className={`intro ${opening ? "intro--opening" : ""}`}
-      aria-label="Видеоприглашение"
-    >
-      <video
-        ref={video}
-        className="intro__video"
-        autoPlay
-        playsInline
-        muted={muted}
-        disablePictureInPicture
-        controlsList="nodownload noplaybackrate nofullscreen"
-        onEnded={() => setReady(true)}
-        onError={() => setReady(true)}
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        <source
-          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-          type="video/mp4"
-        />
-      </video>
-      <div className="intro__shade" />
-      <p className="intro__caption">
-        история, которая начинается
-        <br />с одного «да»
-      </p>
-      <button
-        className="sound"
-        onClick={() => setMuted(!muted)}
-        aria-label={muted ? "Включить звук" : "Выключить звук"}
-      >
-        {muted ? "звук выкл." : "звук вкл."}
-      </button>
-      <div
-        className={`intro__continue ${ready ? "intro__continue--ready" : ""}`}
-      >
-        <span>{ready ? "всё самое важное впереди" : "смотрите до конца"}</span>
-        {ready && (
-          <button onClick={onComplete} disabled={opening}>
-            открыть приглашение <b>↓</b>
-          </button>
-        )}
-      </div>
-    </section>
-  );
+function getInitialSlide() {
+  const hash = window.location.hash.slice(1);
+  return slides.some(([id]) => id === hash) ? hash : slides[0][0];
 }
 
-function SideNav({ active }) {
-  const items = [
-    ["hero", "Начало"],
-    ["date", "Дата"],
-    ["program", "Программа"],
-    ["details", "Детали"],
-    ["rsvp", "Ответ"],
-  ];
+function SlideNav({ active, onNavigate }) {
   return (
-    <nav className="side-nav" aria-label="Навигация по приглашению">
-      {items.map(([id, label]) => (
+    <nav className="slide-nav" aria-label="Навигация по приглашению">
+      {slides.map(([id, label]) => (
         <a
-          className={active === id ? "is-active" : ""}
           href={`#${id}`}
           key={id}
-          aria-label={label}
+          className={active === id ? "is-active" : ""}
+          aria-current={active === id ? "page" : undefined}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onNavigate(id);
+          }}
         >
-          <span>{label}</span>
-          <i />
+          <span>{label}</span><i />
         </a>
       ))}
     </nav>
   );
 }
 
+function NextArrow({ href, label }) {
+  const arrowRef = useRef(null);
+
+  useEffect(() => {
+    const element = arrowRef.current;
+    if (!element || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    let frameId;
+    const startedAt = performance.now();
+    const animate = (now) => {
+      const seconds = (now - startedAt) / 1000;
+      const offset = Math.sin(seconds * Math.PI) * 7;
+      element.style.transform = `translateX(-50%) translateY(${offset}px)`;
+      frameId = requestAnimationFrame(animate);
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => {
+      cancelAnimationFrame(frameId);
+      element.style.transform = "";
+    };
+  }, []);
+
+  return (
+    <a ref={arrowRef} className="next-arrow" href={href} aria-label={label}>
+      ↓
+    </a>
+  );
+}
+
 export default function App() {
   const guest = useMemo(getGuest, []);
-  const [introComplete, setIntroComplete] = useState(false);
-  const [opening, setOpening] = useState(false);
+  const [activeSlide, setActiveSlide] = useState(getInitialSlide);
   const [rsvp, setRsvp] = useState(false);
-  const [activeSlide, setActiveSlide] = useState("hero");
+  const trackRef = useRef(null);
+  const activeIndexRef = useRef(Math.max(0, slides.findIndex(([id]) => id === getInitialSlide())));
+  const offsetRef = useRef(activeIndexRef.current * -100);
+  const animationRef = useRef(null);
+  const touchStartRef = useRef(null);
 
-  const openInvitation = () => {
-    setOpening(true);
-    window.setTimeout(() => setIntroComplete(true), 700);
+  const goToSlide = (idOrIndex) => {
+    const requestedIndex = typeof idOrIndex === "number"
+      ? idOrIndex
+      : slides.findIndex(([id]) => id === idOrIndex);
+    const targetIndex = Math.max(0, Math.min(slides.length - 1, requestedIndex));
+    if (requestedIndex < 0 || !trackRef.current) return;
+
+    const targetOffset = targetIndex * -100;
+    const startOffset = offsetRef.current;
+    const distance = targetOffset - startOffset;
+    cancelAnimationFrame(animationRef.current);
+    activeIndexRef.current = targetIndex;
+    setActiveSlide(slides[targetIndex][0]);
+    if (Math.abs(distance) < 0.01) return;
+
+    const startedAt = performance.now();
+    const duration = 560;
+    const animate = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - ((1 - progress) ** 3);
+      offsetRef.current = startOffset + distance * eased;
+      trackRef.current.style.transform = `translate3d(0, ${offsetRef.current}%, 0)`;
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        animationRef.current = null;
+      }
+    };
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
+  const moveBy = (delta) => goToSlide(activeIndexRef.current + delta);
+
+  useEffect(() => {
+    if (trackRef.current) {
+      trackRef.current.style.transform = `translate3d(0, ${offsetRef.current}%, 0)`;
+    }
+
+    const onWheel = (event) => {
+      event.preventDefault();
+      if (Math.abs(event.deltaY) < 12) return;
+      moveBy(event.deltaY > 0 ? 1 : -1);
+    };
+    const onKeyDown = (event) => {
+      const keys = {
+        ArrowDown: 1,
+        PageDown: 1,
+        ArrowRight: 1,
+        ArrowUp: -1,
+        PageUp: -1,
+        ArrowLeft: -1,
+      };
+      if (keys[event.key]) {
+        event.preventDefault();
+        moveBy(keys[event.key]);
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        goToSlide(0);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        goToSlide(slides.length - 1);
+      }
+    };
+    const onTouchStart = (event) => {
+      touchStartRef.current = event.touches[0]?.clientY ?? null;
+    };
+    const onTouchEnd = (event) => {
+      if (touchStartRef.current == null) return;
+      const endY = event.changedTouches[0]?.clientY ?? touchStartRef.current;
+      const distance = touchStartRef.current - endY;
+      touchStartRef.current = null;
+      if (Math.abs(distance) >= 40) moveBy(distance > 0 ? 1 : -1);
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      cancelAnimationFrame(animationRef.current);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+
+  const handleStoryClick = (event) => {
+    const link = event.target.closest("a[href^='#']");
+    if (!link || !event.currentTarget.contains(link)) return;
+    const id = link.getAttribute("href").slice(1);
+    if (!slides.some(([slideId]) => slideId === id)) return;
+    event.preventDefault();
+    goToSlide(id);
   };
 
   const respond = () => {
@@ -145,238 +219,79 @@ export default function App() {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  useEffect(() => {
-    if (!introComplete) return undefined;
-    const sections = document.querySelectorAll("[data-reveal]");
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
-          } else {
-            entry.target.classList.remove("is-visible");
-          }
-        });
-      },
-      { threshold: 0.14 },
-    );
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, [introComplete]);
-
-  useEffect(() => {
-    if (!introComplete) return undefined;
-    const slides = [...document.querySelectorAll("[data-slide]")];
-    let locked = false;
-    let touchStartY = 0;
-    const revealActive = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActiveSlide(entry.target.id);
-        });
-      },
-      { threshold: 0.6 },
-    );
-    slides.forEach((slide) => revealActive.observe(slide));
-
-    const go = (direction) => {
-      const current = slides.findIndex((slide) => slide.id === activeSlide);
-      const next = Math.max(
-        0,
-        Math.min(slides.length - 1, current + direction),
-      );
-      if (next === current || locked) return;
-      locked = true;
-      slides[next].scrollIntoView({ behavior: "smooth", block: "start" });
-      window.setTimeout(() => {
-        locked = false;
-      }, 700);
-    };
-    const onWheel = (event) => {
-      event.preventDefault();
-      if (Math.abs(event.deltaY) > 6) go(event.deltaY > 0 ? 1 : -1);
-    };
-    const onTouchStart = (event) => {
-      touchStartY = event.touches[0].clientY;
-    };
-    const onTouchEnd = (event) => {
-      const distance = touchStartY - event.changedTouches[0].clientY;
-      if (Math.abs(distance) > 42) go(distance > 0 ? 1 : -1);
-    };
-    window.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
-    return () => {
-      revealActive.disconnect();
-      window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchend", onTouchEnd);
-    };
-  }, [introComplete, activeSlide]);
-
   return (
-    <main>
-      {!introComplete && (
-        <Intro onComplete={openInvitation} opening={opening} />
-      )}
-      {introComplete && (
-        <>
-          <SideNav active={activeSlide} />
-          <div className="invitation">
-            <section className="hero section" id="hero" data-reveal data-slide>
-              <p className="eyebrow">приглашение на свадьбу</p>
-              <div className="hero__names">
-                <span>Илья</span>
-                <i>&</i>
-                <span>Дарина</span>
-              </div>
-              <p className="hero__date">25 · 09 · 2026</p>
-              <div className="floral floral--top">✦</div>
-              <p className="scroll-note">
-                листайте медленно <b>↓</b>
-              </p>
-            </section>
+    <main className="story" onClick={handleStoryClick}>
+      <SlideNav active={activeSlide} onNavigate={goToSlide} />
+      <div className="slides" ref={trackRef}>
+        <WelcomeSlide />
 
-            <section
-              className="letter section"
-              id="letter"
-              data-reveal
-              data-slide
-            >
-              <p className="letter__pre">{guest.salutation},</p>
-              <h1>
-                мы очень ждём
-                <br />
-                этот день.
-              </h1>
-              <p>
-                И будем бесконечно счастливы разделить его с вами. Сохраните эту
-                дату — начинается наша новая семейная история.
-              </p>
-              <div className="letter__signature">
-                Илья <i>и</i> Дарина
-              </div>
-            </section>
+        <DreamSlide isActive={activeSlide === "grow"} />
 
-            <section
-              className="date-card section"
-              id="date"
-              data-reveal
-              data-slide
-            >
-              <p className="eyebrow">пятница · сентябрь</p>
-              <div className="calendar">
-                <span>24</span>
-                <strong>
-                  25<small>сентября</small>
-                </strong>
-                <span>26</span>
-              </div>
-              <p>2026</p>
-            </section>
-
-            <section
-              className="program section"
-              id="program"
-              data-reveal
-              data-slide
-            >
-              <p className="eyebrow">как пройдёт день</p>
-              <div className="timeline">
-                <div>
-                  <time>15:30</time>
-                  <p>
-                    <b>Собираемся</b>
-                    <br />
-                    встречаемся, обнимаемся
-                  </p>
-                </div>
-                <div>
-                  <time>16:00</time>
-                  <p>
-                    <b>Церемония</b>
-                    <br />
-                    говорим самое главное
-                  </p>
-                </div>
-                <div>
-                  <time>17:00</time>
-                  <p>
-                    <b>Ужин и праздник</b>
-                    <br />
-                    танцуем до счастливого конца
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section
-              className="details section"
-              id="details"
-              data-reveal
-              data-slide
-            >
-              <p className="eyebrow">немного деталей</p>
-              <Accordion number="01" title="Локация">
-                <p>
-                  Усадьба «Белый берег»
-                  <br />
-                  Московская область, с. Ильинское
-                </p>
-                <a
-                  href="https://maps.google.com/?q=55.7558,37.6173"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  открыть карту ↗
-                </a>
-              </Accordion>
-              <Accordion number="02" title="Дресс-код">
-                <p>
-                  Будем рады видеть вас в мягких природных оттенках: кремовом,
-                  шалфейном, пыльно-голубом и терракотовом.
-                </p>
-                <div className="swatches">
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </div>
-              </Accordion>
-              <Accordion number="03" title="Пожелания">
-                <p>
-                  Ваше присутствие — лучший подарок. Если захотите нас
-                  поздравить, будем благодарны за вклад в нашу мечту о
-                  путешествии.
-                </p>
-              </Accordion>
-            </section>
-
-            <section className="rsvp section" id="rsvp" data-reveal data-slide>
-              <p className="eyebrow">до встречи</p>
-              <h2>
-                Вы будете
-                <br />с нами?
-              </h2>
-              {!rsvp ? (
-                <button className="rsvp__button" onClick={respond}>
-                  Мы будем{guest.partySize === 1 ? "" : " вдвоём"}{" "}
-                  <span>→</span>
-                </button>
-              ) : (
-                <p className="rsvp__thanks">
-                  Ура, {guest.name}!<br />
-                  Мы вас очень ждём ♡
-                </p>
-              )}
-              <small>Пожалуйста, дайте знать до 25 мая</small>
-              <footer>
-                И & Д <span>·</span> 2026
-              </footer>
-            </section>
+        <section className="slide invite" id="invite" data-slide>
+          <img className="invite__friends" src={friendsA} alt="Илья и Дарина" />
+          <img className="invite__friends-echo" src={friendsB} alt="" />
+          <img className="invite__polaroid" src={weddingPolaroidA} alt="Детская фотография жениха и невесты" />
+          <img className="invite__polaroid-echo" src={weddingPolaroidB} alt="" />
+          <div className="invite__copy">
+            <p>{guest.salutation}, мы рады сообщить вам, что скоро станем семьёй</p>
+            <p>и хотим разделить с вами этот день</p>
           </div>
-        </>
-      )}
+          <NextArrow href="#registry" label="К росписи" />
+        </section>
+
+        <section className="slide registry" id="registry" data-slide>
+          <div className="registry__copy">
+            <p>Приглашаем вас на роспись<br />по адресу:</p>
+            <strong>г. Чебоксары, Московский просп., 38, корп. 5</strong>
+            <em>в 13:40</em>
+          </div>
+          <img className="registry__wedding" src={childhoodWeddingB} alt="" />
+          <img className="registry__polaroid" src={weddingPolaroidB} alt="" />
+          <img className="registry__line" src={heartLineB} alt="" />
+          <NextArrow href="#celebration" label="К празднованию" />
+        </section>
+
+        <section className="slide celebration" id="celebration" data-slide>
+          <img className="celebration__friends" src={friendsB} alt="" />
+          <img className="celebration__heart" src={heartB} alt="" />
+          <div className="celebration__copy">
+            <p>и на празднование в домик<br />по адресу:</p>
+            <strong>Адрес дома</strong>
+            <em>в 17:00</em>
+          </div>
+          <NextArrow href="#date" label="К дате" />
+        </section>
+
+        <section className="slide date" id="date" data-slide>
+          <p className="date__month"><span>Сентябрь</span> 2026</p>
+          <img className="date__calendar" src={calendarInviteA} alt="Календарь сентября 2026" />
+          <img className="date__calendar-shadow" src={calendarInviteB} alt="" />
+          <p className="date__caption">НА НАГРАЖДЕНИЕ В ДОМИК<br />ПО АДРЕСУ:<br />АДРЕС ДОМА</p>
+          <div className="date__days" aria-label="Дни недели">П Н В Т С Р Ч Т П Т С Б В С</div>
+          <NextArrow href="#details" label="К деталям" />
+        </section>
+
+        <section className="slide details" id="details" data-slide>
+          <img className="details__heart" src={heartB} alt="" />
+          <img className="details__child" src={childPinkB} alt="" />
+          <p>Для нас очень важен этот день и мы решили провести его не совсем привычно — не в ресторане, а на природе.</p>
+          <p>Мы хотим провести с вами искренний активный вечер, который мы сами будем писать словно сценаристы сериала.</p>
+          <NextArrow href="#rsvp" label="К ответу" />
+        </section>
+
+        <section className="slide rsvp" id="rsvp" data-slide>
+          <img className="rsvp__line" src={heartLineA} alt="" />
+          <p>Для нас очень важен этот день, и мы решили провести его не совсем привычно — не в ресторане, а на природе.</p>
+          <p>Мы хотим провести с вами искренний активный вечер, который мы сами будем писать словно сценаристы сериала.</p>
+          {!rsvp ? (
+            <button className="figma-button figma-button--button" onClick={respond}>
+              ACCEPT
+            </button>
+          ) : (
+            <p className="rsvp__thanks">Спасибо, {guest.name}!<br />Очень ждём вас.</p>
+          )}
+        </section>
+      </div>
     </main>
   );
 }

@@ -1,0 +1,295 @@
+.dream-slide {
+  display: flex;
+  min-height: 100svh;
+  padding: clamp(24px, 5vh, 58px) clamp(18px, 6vw, 86px);
+}
+
+.dream-slide .figma-button {
+  right: auto;
+  bottom: 3.5vh;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dream-slide__scene {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  position: relative;
+}
+
+.dream-slide__boy-group {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  align-items: flex-end;
+  width: min(47vw, 350px);
+  height: clamp(500px, 70svh, 620px);
+}
+
+.slide .dream-slide__baby {
+  position: static;
+  width: 100%;
+  max-height: min(52svh, 440px);
+  object-fit: contain;
+  transform: translateY(-9vh);
+}
+
+.dream-slide__girl-group {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: min(34vw, 360px);
+  max-height: min(64svh, 570px);
+}
+
+.dream-slide__girl-thoughts {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-direction: row-reverse;
+  width: 100%;
+  min-height: clamp(90px, 17vw, 190px);
+  margin-bottom: clamp(8px, 2vw, 22px);
+  gap: 0;
+  transform: none;
+  transform-origin: right center;
+  position: relative;
+  left: clamp(-62px, -4vw, -18px);
+}
+
+.slide .dream-slide__girl-thought {
+  position: static;
+  flex: 0 0 auto;
+  height: auto;
+  object-fit: contain;
+  transform-origin: center;
+}
+
+.slide .dream-slide__girl-thought--small {
+  width: clamp(26px, 4vw, 58px);
+  bottom: -70px;
+  position: relative;
+  right: 250px;
+}
+
+.slide .dream-slide__girl-thought--large {
+  position: relative;
+  display: grid;
+  place-items: center;
+    width: clamp(170px, 30vw, 420px);
+  margin-left: clamp(-18px, -1.5vw, -6px);
+  transform: none;
+  bottom: 80px;
+  right: 260px;
+
+}
+
+.dream-slide__girl-thought--large > * { grid-area: 1 / 1; }
+.dream-slide__girl-thought--large > img { position: static; width: 100%; height: auto; transform: rotate(-151.81deg); }
+.dream-slide__girl-thought--large p { z-index: 2; width: 78%; margin: 0; color: #111; text-align: center; white-space: nowrap; font: clamp(13px, 1.8vw, 28px) / 1.1 "Marck Script", "Annabelle", cursive; }
+
+.slide .dream-slide__girl {
+  position: static;
+  flex: 0 0 auto;
+  width: 100%;
+  max-height: min(57svh, 500px);
+  object-fit: contain;
+}
+
+/* Контейнер не участвует в расчёте flex-размера сцены. */
+.dream-slide__clouds {
+  position: absolute;
+  z-index: 3;
+  top: clamp(32px, 7vh, 90px);
+  left: clamp(64px, 18vw, 300px);
+  width: min(68vw, 820px);
+  height: min(52svh, 520px);
+  pointer-events: none;
+}
+
+.slide .dream-slide__cloud {
+  position: absolute;
+  height: auto;
+  object-fit: contain;
+  transform-origin: center;
+}
+
+.slide .dream-slide__cloud--small {
+  left: 0;
+  top: 150px;
+  width: clamp(10px, 1.28vw, 20px);
+  height: clamp(31px, 3.77vw, 59px);
+}
+
+.slide .dream-slide__cloud--medium {
+  left: 0;
+  top:30px;
+  width: clamp(34px, 5.61vw, 57.8189px);
+  height: clamp(67px, 9.8vw, 153.4321px);
+}
+
+/* Большое облако служит контейнером для текста, руки и ссылки. */
+.slide .dream-slide__cloud--large {
+  left: 50px;
+  top: -120px;
+  display: grid;
+  place-items: center;
+  width: clamp(170px, 30vw, 420px);
+  margin: 0;
+  transform: none;
+  will-change: transform;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.dream-slide__cloud--large > * {
+  grid-area: 1 / 1;
+}
+
+.dream-slide__cloud--large > img:not(.dream-slide__cloud-hand) {
+  position: static;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  transform: rotate(-28.19deg) scaleY(-1);
+
+  
+}
+
+.dream-slide__cloud-text {
+  z-index: 2;
+  width: 80%;
+  margin: 0;
+  color: #111;
+  text-align: center;
+  font-size: clamp(10px, 1.7vw, 26px);
+  line-height: 1.1;
+  position: relative;
+  top: 0;
+  left: 0;
+}
+
+.dream-slide__cloud-hand {
+  position: absolute;
+  left: -20px;
+  bottom: 0;
+  width: clamp(52px, 7vw, 100px);
+  height: auto;
+  object-fit: contain;
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+
+.dream-slide__cloud-button {
+  position: absolute;
+  z-index: 2;
+  right: -12%;
+  bottom: -16%;
+  display: grid;
+  place-items: center;
+  width: clamp(86px, 12vw, 150px);
+  min-height: clamp(42px, 5vw, 68px);
+  margin: 0;
+  padding: 4px;
+  border: 0;
+  color: #111;
+  background: transparent;
+  font: clamp(9px, 1.5vw, 17px) / 1 "Playfair Display", Georgia, serif;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transform: rotate(39deg);
+  transform-origin: center;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.dream-slide__cloud-button span { position: relative; z-index: 2; }
+
+.dream-slide__cloud-button:focus-visible {
+  outline: 2px solid #780303;
+  outline-offset: 3px;
+}
+
+@media (min-width: 1061px) {
+  .dream-slide__boy-group {
+    width: min(52vw, 480px);
+    height: min(76svh, 680px);
+  }
+
+  .slide .dream-slide__baby {
+    max-height: min(62svh, 2060px);
+  }
+
+  .dream-slide__clouds {
+    left: clamp(260px, 28vw, 430px);
+  }
+
+  .dream-slide__girl-group {
+    width: min(42vw, 460px);
+    max-height: min(76svh, 680px);
+  }
+
+  .slide .dream-slide__girl {
+    max-height: min(68svh, 620px);
+  }
+
+  .slide .dream-slide__girl-thought--large {
+    right: clamp(-140px, -8vw, -70px);
+  }
+}
+
+@media (max-width: 1060px) {
+  .dream-slide {
+    padding-inline: 14px;
+  }
+
+  .slide .dream-slide__baby {
+    width: 100%;
+    transform: translateY(-12vh);
+  }
+
+  .dream-slide__boy-group { width: min(45vw, 250px); }
+
+  .slide .dream-slide__girl {
+    width: min(27vw, 150px);
+  }
+
+  .dream-slide__girl-group { width: min(34vw, 170px); }
+  .slide .dream-slide__girl-thought--large { right: 30px; }
+  .slide .dream-slide__girl-thought--small { right: 90px; }
+  .dream-slide__cloud-hand {
+    right: 4%;
+    bottom: 24%;
+  }
+
+  .dream-slide__cloud-button {
+    right: -18%;
+    bottom: -22%;
+  }
+
+  .dream-slide__clouds {
+    top: clamp(34px, 7vh, 62px);
+    left: clamp(64px, 18vw, 120px);
+    width: min(75vw, 500px);
+    height: min(48svh, 430px);
+  }
+
+  .slide .dream-slide__cloud--medium {
+    top: 30px;
+  }
+
+  .slide .dream-slide__cloud--small {
+    top: 150px;
+  }
+
+  .dream-slide__cloud-button {
+    font-size: clamp(7px, 1.7vw, 10px);
+  }
+}
