@@ -180,7 +180,11 @@ export default function DreamSlide({ isActive = false }) {
     const revealVersion = revealVersionRef.current;
     const girlGroup = girlGroupRef.current;
     const girlClouds = girlCloudRefs.current.filter(Boolean);
-    if (clickButtonRef.current) clickButtonRef.current.style.pointerEvents = "none";
+    clickReadyRef.current = false;
+    if (clickButtonRef.current) {
+      clickButtonRef.current.style.pointerEvents = "none";
+      fadeOutElement(clickButtonRef.current, 260);
+    }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       [girlGroup, ...girlClouds].forEach((element) => {
         if (!element) return;

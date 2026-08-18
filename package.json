@@ -11,12 +11,13 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "motion": "^13.1.0",
     "react": "latest",
     "react-dom": "latest",
     "vite": "latest"
   },
   "devDependencies": {
-    "sass": "^1.102.0",
-    "playwright": "^1.55.0"
+    "playwright": "^1.55.0",
+    "sass": "^1.102.0"
   }
 }

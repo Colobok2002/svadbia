@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultGuest, guests, rsvpFormUrl } from "./data/guests";
 import WelcomeSlide from "./components/WelcomeSlide";
 import DreamSlide from "./components/DreamSlide";
+import SilkBackground from "./components/SilkBackground";
 
 import childPinkA from "./assets/figma/raw-01.png";
 import weddingPolaroidA from "./assets/figma/raw-03.png";
@@ -221,11 +222,22 @@ export default function App() {
 
   return (
     <main className="story" onClick={handleStoryClick}>
+      <SilkBackground />
       <SlideNav active={activeSlide} onNavigate={goToSlide} />
       <div className="slides" ref={trackRef}>
         <WelcomeSlide />
 
         <DreamSlide isActive={activeSlide === "grow"} />
+
+        <section className="slide together" id="together" data-slide>
+          <h2 className="together__question script">А кем ты хотел стать в детстве?</h2>
+          <img className="together__child" src={childPinkA} alt="Дарина в детстве" />
+          <img className="together__child-echo" src={childPinkB} alt="" />
+          <img className="together__hand" src={clickHand} alt="" />
+          <img className="together__wedding" src={childhoodWeddingA} alt="Илья и Дарина играют свадьбу" />
+          <img className="together__wedding-echo" src={childhoodWeddingB} alt="" />
+          <a className="figma-button" href="#invite">ВМЕСТЕ</a>
+        </section>
 
         <section className="slide invite" id="invite" data-slide>
           <img className="invite__friends" src={friendsA} alt="Илья и Дарина" />
