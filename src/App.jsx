@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
+import ReactCardFlipModule from "react-card-flip";
 import { defaultGuest, guests, rsvpFormUrl } from "./data/guests";
 import LineWaves from "./components/LineWaves/LineWaves";
 
@@ -15,6 +16,91 @@ import heart from "./assets/figma/raw-15.png";
 import heartLineB from "./assets/figma/raw-16.png";
 import childPink from "./assets/figma/raw-17.png";
 
+const ReactCardFlip = ReactCardFlipModule.default ?? ReactCardFlipModule;
+
+const registryVenue = {
+  name: "Дворец бракосочетания",
+  address: "Московский проспект, 38к5, Чебоксары, Чувашская Республика — Чувашия",
+  coordinates: "56.146289,47.216639",
+};
+
+const celebrationVenue = {
+  name: "Дом в Чандрово",
+  address: "Чандровская улица, 79А, деревня Чандрово, городской округ Чебоксары, Чувашская Республика — Чувашия",
+  coordinates: "56.123282,47.090756",
+};
+
+const calendarLabels = {
+  "label.addtocalendar": "Добавить в календарь",
+  ical: "Файл календаря",
+  close: "Закрыть",
+  continue: "Продолжить",
+  cancel: "Отмена",
+  "modal.opensafari.ical.h": "Откройте Safari",
+  "modal.opensafari.ical.text": "На iPhone файл календаря надёжнее открывается через Safari.",
+  "modal.webview.ical.h": "Откройте в браузере",
+  "modal.webview.ical.text": "Встроенный браузер приложения может не открыть файл календаря.",
+};
+
+const weddingCalendarEvents = [
+  {
+    id: "registry",
+    day: "25",
+    weekday: "пятница",
+    time: "13:40",
+    eyebrow: "День первый",
+    title: "Церемония в ЗАГСе",
+    shortAddress: "Московский проспект, 38к5",
+    calendar: {
+      name: "Свадьба Ильи и Дарины — церемония в ЗАГСе",
+      description: "Церемония бракосочетания Ильи и Дарины.",
+      startDate: "2026-09-25",
+      startTime: "13:40",
+      endDate: "2026-09-25",
+      endTime: "15:00",
+      timeZone: "Europe/Moscow",
+      location: registryVenue.address,
+      status: "CONFIRMED",
+      options: ["Apple", "Google", "iCal"],
+      optionsMobile: ["Google", "iCal"],
+      optionsIOS: ["Apple", "Google", "iCal"],
+      iCalFileName: "ilya-darina-registry",
+      listStyle: "modal",
+      forceOverlay: true,
+      lightMode: "light",
+      customLabels: calendarLabels,
+    },
+  },
+  {
+    id: "celebration",
+    day: "26",
+    weekday: "суббота",
+    time: "17:00",
+    eyebrow: "День второй",
+    title: "Праздник в доме",
+    shortAddress: "Чандровская улица, 79А",
+    calendar: {
+      name: "Свадьба Ильи и Дарины — праздник в доме",
+      description: "Праздник в доме. Будут баня и джакузи — возьмите тапочки и полотенце.",
+      startDate: "2026-09-26",
+      startTime: "17:00",
+      endDate: "2026-09-26",
+      endTime: "23:59",
+      timeZone: "Europe/Moscow",
+      location: celebrationVenue.address,
+      status: "CONFIRMED",
+      options: ["Apple", "Google", "iCal"],
+      optionsMobile: ["Google", "iCal"],
+      optionsIOS: ["Apple", "Google", "iCal"],
+      iCalFileName: "ilya-darina-celebration",
+      listStyle: "modal",
+      forceOverlay: true,
+      lightMode: "light",
+      customLabels: calendarLabels,
+    },
+  },
+];
+
 const slides = [
   { id: "welcome", label: "Начало", chapter: "Пролог", theme: "light" },
   { id: "grow", label: "История", chapter: "01", theme: "light" },
@@ -29,35 +115,36 @@ const slides = [
 
 const panelVariants = {
   enter: (direction) => ({
-    opacity: 0,
-    x: direction > 0 ? 90 : -90,
-    scale: 0.94,
-    filter: "blur(18px)",
+    x: direction > 0 ? 32 : -32,
+    scale: 0.99,
   }),
   center: {
     opacity: 1,
     x: 0,
     scale: 1,
-    filter: "blur(0px)",
-    transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.76, ease: [0.16, 1, 0.3, 1] },
   },
-  exit: (direction) => ({
+  exit: () => ({
     opacity: 0,
-    x: direction > 0 ? -70 : 70,
-    scale: 1.035,
-    filter: "blur(12px)",
-    transition: { duration: 0.46, ease: [0.4, 0, 1, 1] },
+    x: 0,
+    scale: 0.995,
+    transition: { duration: 0.2, ease: [0.4, 0, 1, 1] },
   }),
 };
 
 const stagger = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.09, delayChildren: 0.12 } },
+  show: { transition: { staggerChildren: 0.035, delayChildren: 0.02 } },
 };
 
 const reveal = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.74, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const revealWithoutFade = {
+  hidden: { y: 24 },
+  show: { y: 0, transition: { duration: 0.78, ease: [0.16, 1, 0.3, 1] } },
 };
 
 function getGuest() {
@@ -96,11 +183,53 @@ function Photo({ src, alt, className = "", rotate = 0, delay = 0 }) {
   );
 }
 
+function RouteLink({ venue }) {
+  const webRoute = `https://yandex.ru/maps/?rtext=~${venue.coordinates}&rtt=auto`;
+  const appRoute = `yandexmaps://maps.yandex.ru/?rtext=~${venue.coordinates}&rtt=auto`;
+
+  const openRoute = (event) => {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (!isMobile) return;
+
+    event.preventDefault();
+    let fallbackTimer;
+
+    const stopFallback = () => {
+      if (document.hidden) window.clearTimeout(fallbackTimer);
+    };
+
+    document.addEventListener("visibilitychange", stopFallback, { once: true });
+    fallbackTimer = window.setTimeout(() => {
+      document.removeEventListener("visibilitychange", stopFallback);
+      window.location.assign(webRoute);
+    }, 2200);
+
+    window.location.assign(appRoute);
+  };
+
+  return (
+    <a
+      className="route-link"
+      href={webRoute}
+      target="_blank"
+      rel="noreferrer"
+      onClick={openRoute}
+      aria-label={`Построить маршрут до ${venue.name} в Яндекс Картах`}
+    >
+      <span>
+        <small>Яндекс Карты</small>
+        Построить маршрут
+      </span>
+      <i aria-hidden="true">↗</i>
+    </a>
+  );
+}
+
 function Intro({ goTo }) {
   return (
     <motion.div className="panel-layout hero-layout" variants={stagger} initial="hidden" animate="show">
       <div className="hero-copy">
-        <motion.p className="eyebrow" variants={reveal}>Свадебное приглашение · 25.09.2026</motion.p>
+        <motion.p className="eyebrow" variants={reveal}>Свадебное приглашение · 25–26.09.2026</motion.p>
         <motion.h1 className="hero-title" variants={reveal}>
           Илья <span>&amp;</span><br />Дарина
         </motion.h1>
@@ -126,57 +255,49 @@ function Intro({ goTo }) {
 
 function DreamReveal() {
   const [isRevealed, setIsRevealed] = useState(false);
-  const isTouchInteraction = () => window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  const toggleReveal = () => setIsRevealed((current) => !current);
 
   return (
-    <motion.div
-      className="dream-reveal-card"
-      onHoverStart={() => setIsRevealed(true)}
-      onHoverEnd={() => setIsRevealed(false)}
-      onClick={() => {
-        if (isTouchInteraction()) setIsRevealed((current) => !current);
-      }}
-      onFocus={() => setIsRevealed(true)}
-      onBlur={() => setIsRevealed(false)}
-      tabIndex={0}
-      role="button"
-      aria-label={isRevealed ? "Показана Дарина в детстве" : "Узнать, о ком мечтал Илья"}
+    <ReactCardFlip
+      isFlipped={isRevealed}
+      flipDirection="horizontal"
+      flipSpeedFrontToBack={0.92}
+      flipSpeedBackToFront={0.82}
+      containerClassName="dream-flip"
     >
-      <AnimatePresence initial={false} mode="wait">
-        {!isRevealed ? (
-          <motion.div
-            key="question"
-            className="dream-scene dream-scene--question"
-            initial={{ opacity: 0, scale: 1.025, filter: "blur(18px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, scale: 0.975, filter: "blur(20px)" }}
-            transition={{ duration: 0.46, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <img className="dream-scene__boy" src={sleepingBaby} alt="Илья в детстве" />
-            <blockquote className="dream-thought">
-              Интересно,<br />кто будет<br /><em>моей женой?</em>
-            </blockquote>
-            <span className="dream-scene__hint">Наведи или нажми ↗</span>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="answer"
-            className="dream-scene dream-scene--answer"
-            initial={{ opacity: 0, scale: 1.04, filter: "blur(20px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, scale: 1.025, filter: "blur(18px)" }}
-            transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <img className="dream-scene__girl" src={girl} alt="Дарина в детстве" />
-            <div className="dream-answer">
-              <small>Спойлер из будущего</small>
-              <strong>Вот она.</strong>
-            </div>
-            <span className="dream-scene__hint">Ещё раз — вернуть сон ↙</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      <button
+        key="front"
+        type="button"
+        className="dream-reveal-card dream-reveal-card--front"
+        onClick={toggleReveal}
+        aria-label="Узнать, о ком мечтал Илья"
+      >
+        <span className="dream-scene dream-scene--question">
+          <img className="dream-scene__boy" src={sleepingBaby} alt="Илья в детстве" />
+          <span className="dream-thought">
+            Интересно,<br />кто будет<br /><em>моей женой?</em>
+          </span>
+          <span className="dream-scene__hint">Нажми на карточку ↗</span>
+        </span>
+      </button>
+
+      <button
+        key="back"
+        type="button"
+        className="dream-reveal-card dream-reveal-card--back"
+        onClick={toggleReveal}
+        aria-label="Вернуть фотографию Ильи"
+      >
+        <span className="dream-scene dream-scene--answer">
+          <img className="dream-scene__girl" src={girl} alt="Дарина в детстве" />
+          <span className="dream-answer">
+            <small>Спойлер из будущего</small>
+            <strong>Вот она.</strong>
+          </span>
+          <span className="dream-scene__hint">Нажми ещё раз ↙</span>
+        </span>
+      </button>
+    </ReactCardFlip>
   );
 }
 
@@ -189,7 +310,7 @@ function Grow() {
         <p>Мы ещё не знали друг друга, но жизнь уже тихо складывала нашу историю.</p>
       </motion.div>
       <div className="story-collage story-collage--dream">
-        <motion.div className="dream-reveal" variants={reveal}>
+        <motion.div className="dream-reveal" variants={revealWithoutFade}>
           <DreamReveal />
         </motion.div>
       </div>
@@ -234,11 +355,12 @@ function Registry() {
   return (
     <motion.div className="panel-layout event-layout" variants={stagger} initial="hidden" animate="show">
       <motion.div className="event-number" variants={reveal}>13:40</motion.div>
-      <motion.article className="event-card" variants={reveal}>
+      <motion.article className="event-card" variants={revealWithoutFade}>
         <p className="eyebrow">Сначала — главное</p>
         <h2>Церемония</h2>
-        <p>Дворец бракосочетания</p>
-        <address>Чебоксары, Московский проспект,<br />38, корпус 5</address>
+        <p>{registryVenue.name}</p>
+        <address>{registryVenue.address}</address>
+        <RouteLink venue={registryVenue} />
         <div className="event-meta"><span>Пятница</span><span>25 сентября</span></div>
       </motion.article>
       <Photo src={childhoodWeddingB} alt="Детская свадебная фотография" className="photo-registry" rotate={7} />
@@ -249,11 +371,29 @@ function Registry() {
 function Celebration() {
   return (
     <motion.div className="panel-layout celebration-layout" variants={stagger} initial="hidden" animate="show">
-      <motion.div className="celebration-copy" variants={reveal}>
+      <motion.div className="celebration-copy" variants={revealWithoutFade}>
         <p className="eyebrow">А после — самое живое</p>
         <h2>Праздник<br /><em>на природе</em></h2>
         <p>Дом, тёплый вечер и люди, которых мы действительно хотим видеть рядом.</p>
-        <div className="time-chip"><span>17:00</span><small>Адрес дома будет здесь</small></div>
+        <div className="celebration-venue">
+          <div className="celebration-venue__address">
+            <span>17:00</span>
+            <address>{celebrationVenue.address}</address>
+          </div>
+          <RouteLink venue={celebrationVenue} />
+          <p className="parking-note">
+            <i aria-hidden="true">P</i>
+            <span><strong>Парковка</strong> На внедорожнике можно припарковаться возле дома, на легковой машине — возле памятника.</span>
+          </p>
+          <p className="parking-note parking-note--extra">
+            <i aria-hidden="true">♨</i>
+            <span><strong>Баня и джакузи</strong> Будут доступны во время праздника.</span>
+          </p>
+          <p className="parking-note parking-note--extra">
+            <i aria-hidden="true">✓</i>
+            <span><strong>Возьмите с собой</strong> Тапочки и полотенце.</span>
+          </p>
+        </div>
       </motion.div>
       <Photo src={friendsB} alt="Илья и Дарина" className="photo-celebration" rotate={-3} />
       <motion.img className="celebration-heart" src={heart} alt="" variants={reveal} />
@@ -261,20 +401,51 @@ function Celebration() {
   );
 }
 
+function CalendarEventCard({ event }) {
+  const buttonRef = useRef(null);
+
+  const addToCalendar = async () => {
+    const { atcb_action } = await import("add-to-calendar-button");
+    await atcb_action(event.calendar, buttonRef.current);
+  };
+
+  return (
+    <motion.button
+      ref={buttonRef}
+      type="button"
+      className={`date-event-card date-event-card--${event.id}`}
+      variants={revealWithoutFade}
+      whileTap={{ scale: 0.975 }}
+      onClick={addToCalendar}
+      aria-label={`Добавить в календарь: ${event.title}, ${event.day} сентября в ${event.time}`}
+    >
+      <span className="date-event-card__sheet">
+        <span className="date-event-card__month"><span>Сентябрь</span><small>2026</small></span>
+        <strong>{event.day}</strong>
+        <span className="date-event-card__weekday">{event.weekday}</span>
+      </span>
+      <span className="date-event-card__info">
+        <small>{event.eyebrow}</small>
+        <strong>{event.title}</strong>
+        <time dateTime={`2026-09-${event.day}T${event.time}`}>{event.time}</time>
+        <span className="date-event-card__address">{event.shortAddress}</span>
+        <span className="date-event-card__action">Добавить в календарь <i aria-hidden="true">＋</i></span>
+      </span>
+    </motion.button>
+  );
+}
+
 function DateSlide() {
-  const calendar = [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
   return (
     <motion.div className="panel-layout date-layout" variants={stagger} initial="hidden" animate="show">
-      <motion.div className="date-lockup" variants={reveal}>
-        <span>25</span>
-        <div><strong>сентября</strong><small>две тысячи двадцать шестого</small></div>
+      <motion.div className="date-heading" variants={reveal}>
+        <p className="eyebrow">Два дня · одна история</p>
+        <h2>Сохраните<br /><em>две даты</em></h2>
+        <p>Нажмите на нужный день — событие откроется в календаре вашего телефона.</p>
       </motion.div>
-      <motion.div className="calendar-card" variants={reveal}>
-        <div className="calendar-card__head"><span>СЕН</span><strong>2026</strong></div>
-        <div className="calendar-week">{["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"].map((day) => <span key={day}>{day}</span>)}</div>
-        <div className="calendar-days">{calendar.map((day, index) => <i className={day === 25 ? "is-wedding" : ""} key={`${day}-${index}`}>{day}</i>)}</div>
-      </motion.div>
-      <motion.p className="date-aside" variants={reveal}>Сохраните этот день<br />для нашей истории</motion.p>
+      <div className="date-events">
+        {weddingCalendarEvents.map((event) => <CalendarEventCard event={event} key={event.id} />)}
+      </div>
     </motion.div>
   );
 }
@@ -286,11 +457,11 @@ function Details() {
         <p className="eyebrow">Почему именно так</p>
         <h2>Без лишнего.<br /><em>По-настоящему.</em></h2>
       </motion.div>
-      <motion.div className="details-card" variants={reveal}>
+      <motion.div className="details-card" variants={revealWithoutFade}>
         <span>01</span>
         <p>Для нас важен этот день, поэтому мы проведём его не в ресторане, а на природе.</p>
       </motion.div>
-      <motion.div className="details-card details-card--second" variants={reveal}>
+      <motion.div className="details-card details-card--second" variants={revealWithoutFade}>
         <span>02</span>
         <p>Хотим прожить с вами искренний активный вечер, который вместе напишем словно сериал.</p>
       </motion.div>
@@ -306,7 +477,7 @@ function Rsvp({ guest, accepted, onRespond }) {
       <motion.h2 variants={reveal}>{accepted ? "До встречи!" : "Вы будете с нами?"}</motion.h2>
       <motion.p className="rsvp-lead" variants={reveal}>
         {accepted
-          ? `${guest.name}, ваш ответ сохранён. Очень ждём вас 25 сентября.`
+          ? `${guest.name}, ваш ответ сохранён. Очень ждём вас 25 и 26 сентября.`
           : `${guest.salutation}, дайте нам знать, сможете ли вы разделить этот день с нами.`}
       </motion.p>
       {!accepted && (
@@ -352,7 +523,7 @@ export default function App() {
     activeIndexRef.current = target;
     setActiveIndex(target);
     lockedRef.current = true;
-    window.setTimeout(() => { lockedRef.current = false; }, reducedMotion ? 80 : 760);
+    window.setTimeout(() => { lockedRef.current = false; }, reducedMotion ? 80 : 980);
   };
 
   useEffect(() => {
@@ -420,10 +591,10 @@ export default function App() {
 
       <header className="site-header">
         <button className="monogram" onClick={() => goTo(0)} aria-label="К началу">И<span>×</span>Д</button>
-        <div className="site-header__date">25 · 09 · 26</div>
+        <div className="site-header__date">25–26 · 09 · 26</div>
       </header>
 
-      <AnimatePresence initial={false} mode="sync" custom={direction}>
+      <AnimatePresence initial={false} mode="wait" custom={direction}>
         <motion.section
           className={`story-panel story-panel--${activeSlide.id}`}
           id={activeSlide.id}
