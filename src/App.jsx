@@ -18,6 +18,20 @@ import childPink from "./assets/figma/raw-17.png";
 
 const ReactCardFlip = ReactCardFlipModule.default ?? ReactCardFlipModule;
 
+const preloadSources = [
+  girl,
+  sleepingBaby,
+  weddingPolaroidA,
+  childhoodWeddingA,
+  heartLineA,
+  friendsA,
+  childhoodWeddingB,
+  friendsB,
+  heart,
+  heartLineB,
+  childPink,
+];
+
 const registryVenue = {
   name: "Дворец бракосочетания",
   address: "Московский проспект, 38к5, Чебоксары, Чувашская Республика — Чувашия",
@@ -147,6 +161,147 @@ const revealWithoutFade = {
   show: { y: 0, transition: { duration: 0.78, ease: [0.16, 1, 0.3, 1] } },
 };
 
+const celebrationSequence = {
+  hidden: { y: 24 },
+  show: {
+    y: 0,
+    transition: {
+      duration: 0.78,
+      ease: [0.16, 1, 0.3, 1],
+      staggerChildren: 0.09,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+const celebrationItem = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.56, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const cardSequence = {
+  hidden: { y: 24 },
+  show: {
+    y: 0,
+    transition: {
+      duration: 0.78,
+      ease: [0.16, 1, 0.3, 1],
+      staggerChildren: 0.085,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+const cardContentSequence = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.04 } },
+};
+
+const cardItem = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.52, ease: [0.16, 1, 0.3, 1] } },
+};
+
+function preloadImage(src, onDone) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    let settled = false;
+    let timeoutId;
+
+    const finish = async () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      try {
+        await image.decode?.();
+      } catch {
+        // onload is enough when decode is unavailable or rejects.
+      }
+      onDone();
+      resolve();
+    };
+
+    image.onload = finish;
+    image.onerror = finish;
+    image.src = src;
+    timeoutId = window.setTimeout(finish, 10000);
+    if (image.complete) void finish();
+  });
+}
+
+function useSitePreloader() {
+  const [progress, setProgress] = useState(0);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const total = preloadSources.length + 1;
+    let completed = 0;
+
+    const markDone = () => {
+      completed += 1;
+      if (!cancelled) setProgress(Math.round((completed / total) * 100));
+    };
+
+    const imageTasks = preloadSources.map((src) => preloadImage(src, markDone));
+    const fontTask = Promise.race([
+      document.fonts?.ready ?? Promise.resolve(),
+      new Promise((resolve) => window.setTimeout(resolve, 5000)),
+    ]).catch(() => {}).then(markDone);
+    const minimumDisplay = new Promise((resolve) => window.setTimeout(resolve, 900));
+
+    Promise.all([Promise.all([...imageTasks, fontTask]), minimumDisplay]).then(() => {
+      if (cancelled) return;
+      setProgress(100);
+      setIsReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { isReady, progress };
+}
+
+function LoadingScreen({ progress }) {
+  return (
+    <motion.div
+      className="loading-screen"
+      role="status"
+      aria-live="polite"
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, scale: 1.025 }}
+      transition={{ duration: 0.62, ease: [0.4, 0, 0.2, 1] }}
+    >
+      <div className="loading-screen__ornament" aria-hidden="true">
+        <motion.i animate={{ rotate: 360 }} transition={{ duration: 9, repeat: Infinity, ease: "linear" }} />
+        <motion.span
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        >
+          И <b>×</b> Д
+        </motion.span>
+      </div>
+      <div className="loading-screen__copy">
+        <p>Собираем нашу историю</p>
+        <strong>Один момент</strong>
+      </div>
+      <div
+        className="loading-screen__progress"
+        role="progressbar"
+        aria-label="Загрузка приглашения"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={progress}
+      >
+        <span><motion.i initial={{ scaleX: 0 }} animate={{ scaleX: progress / 100 }} transition={{ duration: 0.35, ease: "easeOut" }} /></span>
+        <output>{String(progress).padStart(2, "0")}%</output>
+      </div>
+    </motion.div>
+  );
+}
+
 function getGuest() {
   const hash = window.location.hash.slice(1);
   const hashParams = new URLSearchParams(hash);
@@ -273,11 +428,11 @@ function DreamReveal() {
         aria-label="Узнать, о ком мечтал Илья"
       >
         <span className="dream-scene dream-scene--question">
-          <img className="dream-scene__boy" src={sleepingBaby} alt="Илья в детстве" />
-          <span className="dream-thought">
+          <motion.img className="dream-scene__boy" src={sleepingBaby} alt="Илья в детстве" variants={cardItem} />
+          <motion.span className="dream-thought" variants={cardItem}>
             Интересно,<br />кто будет<br /><em>моей женой?</em>
-          </span>
-          <span className="dream-scene__hint">Нажми на карточку ↗</span>
+          </motion.span>
+          <motion.span className="dream-scene__hint" variants={cardItem}>Нажми на карточку ↗</motion.span>
         </span>
       </button>
 
@@ -289,12 +444,31 @@ function DreamReveal() {
         aria-label="Вернуть фотографию Ильи"
       >
         <span className="dream-scene dream-scene--answer">
-          <img className="dream-scene__girl" src={girl} alt="Дарина в детстве" />
-          <span className="dream-answer">
+          <motion.img
+            className="dream-scene__girl"
+            src={girl}
+            alt="Дарина в детстве"
+            initial={false}
+            animate={isRevealed ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 14, scale: 0.98 }}
+            transition={{ duration: 0.58, delay: isRevealed ? 0.24 : 0, ease: [0.16, 1, 0.3, 1] }}
+          />
+          <motion.span
+            className="dream-answer"
+            initial={false}
+            animate={isRevealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+            transition={{ duration: 0.48, delay: isRevealed ? 0.36 : 0, ease: [0.16, 1, 0.3, 1] }}
+          >
             <small>Спойлер из будущего</small>
             <strong>Вот она.</strong>
-          </span>
-          <span className="dream-scene__hint">Нажми ещё раз ↙</span>
+          </motion.span>
+          <motion.span
+            className="dream-scene__hint"
+            initial={false}
+            animate={isRevealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+            transition={{ duration: 0.4, delay: isRevealed ? 0.48 : 0, ease: [0.16, 1, 0.3, 1] }}
+          >
+            Нажми ещё раз ↙
+          </motion.span>
         </span>
       </button>
     </ReactCardFlip>
@@ -310,7 +484,7 @@ function Grow() {
         <p>Мы ещё не знали друг друга, но жизнь уже тихо складывала нашу историю.</p>
       </motion.div>
       <div className="story-collage story-collage--dream">
-        <motion.div className="dream-reveal" variants={revealWithoutFade}>
+        <motion.div className="dream-reveal" variants={cardSequence}>
           <DreamReveal />
         </motion.div>
       </div>
@@ -355,13 +529,15 @@ function Registry() {
   return (
     <motion.div className="panel-layout event-layout" variants={stagger} initial="hidden" animate="show">
       <motion.div className="event-number" variants={reveal}>13:40</motion.div>
-      <motion.article className="event-card" variants={revealWithoutFade}>
-        <p className="eyebrow">Сначала — главное</p>
-        <h2>Церемония</h2>
-        <p>{registryVenue.name}</p>
-        <address>{registryVenue.address}</address>
-        <RouteLink venue={registryVenue} />
-        <div className="event-meta"><span>Пятница</span><span>25 сентября</span></div>
+      <motion.article className="event-card" variants={cardSequence}>
+        <motion.p className="eyebrow" variants={cardItem}>Сначала — главное</motion.p>
+        <motion.h2 variants={cardItem}>Церемония</motion.h2>
+        <motion.p variants={cardItem}>{registryVenue.name}</motion.p>
+        <motion.address variants={cardItem}>{registryVenue.address}</motion.address>
+        <motion.div className="event-card__route" variants={cardItem}>
+          <RouteLink venue={registryVenue} />
+        </motion.div>
+        <motion.div className="event-meta" variants={cardItem}><span>Пятница</span><span>25 сентября</span></motion.div>
       </motion.article>
       <Photo src={childhoodWeddingB} alt="Детская свадебная фотография" className="photo-registry" rotate={7} />
     </motion.div>
@@ -371,28 +547,32 @@ function Registry() {
 function Celebration() {
   return (
     <motion.div className="panel-layout celebration-layout" variants={stagger} initial="hidden" animate="show">
-      <motion.div className="celebration-copy" variants={revealWithoutFade}>
-        <p className="eyebrow">А после — самое живое</p>
-        <h2>Праздник<br /><em>на природе</em></h2>
-        <p>Дом, тёплый вечер и люди, которых мы действительно хотим видеть рядом.</p>
+      <motion.div className="celebration-copy" variants={celebrationSequence}>
+        <motion.div className="celebration-intro" variants={celebrationItem}>
+          <p className="eyebrow">А после — самое живое</p>
+          <h2>Праздник<br /><em>на природе</em></h2>
+          <p>Дом, тёплый вечер и люди, которых мы действительно хотим видеть рядом.</p>
+        </motion.div>
         <div className="celebration-venue">
-          <div className="celebration-venue__address">
+          <motion.div className="celebration-venue__address" variants={celebrationItem}>
             <span>17:00</span>
             <address>{celebrationVenue.address}</address>
-          </div>
-          <RouteLink venue={celebrationVenue} />
-          <p className="parking-note">
+          </motion.div>
+          <motion.div className="celebration-venue__route" variants={celebrationItem}>
+            <RouteLink venue={celebrationVenue} />
+          </motion.div>
+          <motion.p className="parking-note" variants={celebrationItem}>
             <i aria-hidden="true">P</i>
             <span><strong>Парковка</strong> На внедорожнике можно припарковаться возле дома, на легковой машине — возле памятника.</span>
-          </p>
-          <p className="parking-note parking-note--extra">
+          </motion.p>
+          <motion.p className="parking-note parking-note--extra" variants={celebrationItem}>
             <i aria-hidden="true">♨</i>
             <span><strong>Баня и джакузи</strong> Будут доступны во время праздника.</span>
-          </p>
-          <p className="parking-note parking-note--extra">
+          </motion.p>
+          <motion.p className="parking-note parking-note--extra" variants={celebrationItem}>
             <i aria-hidden="true">✓</i>
             <span><strong>Возьмите с собой</strong> Тапочки и полотенце.</span>
-          </p>
+          </motion.p>
         </div>
       </motion.div>
       <Photo src={friendsB} alt="Илья и Дарина" className="photo-celebration" rotate={-3} />
@@ -414,23 +594,23 @@ function CalendarEventCard({ event }) {
       ref={buttonRef}
       type="button"
       className={`date-event-card date-event-card--${event.id}`}
-      variants={revealWithoutFade}
+      variants={cardSequence}
       whileTap={{ scale: 0.975 }}
       onClick={addToCalendar}
       aria-label={`Добавить в календарь: ${event.title}, ${event.day} сентября в ${event.time}`}
     >
-      <span className="date-event-card__sheet">
+      <motion.span className="date-event-card__sheet" variants={cardItem}>
         <span className="date-event-card__month"><span>Сентябрь</span><small>2026</small></span>
         <strong>{event.day}</strong>
         <span className="date-event-card__weekday">{event.weekday}</span>
-      </span>
-      <span className="date-event-card__info">
-        <small>{event.eyebrow}</small>
-        <strong>{event.title}</strong>
-        <time dateTime={`2026-09-${event.day}T${event.time}`}>{event.time}</time>
-        <span className="date-event-card__address">{event.shortAddress}</span>
-        <span className="date-event-card__action">Добавить в календарь <i aria-hidden="true">＋</i></span>
-      </span>
+      </motion.span>
+      <motion.span className="date-event-card__info" variants={cardContentSequence}>
+        <motion.small variants={cardItem}>{event.eyebrow}</motion.small>
+        <motion.strong variants={cardItem}>{event.title}</motion.strong>
+        <motion.time variants={cardItem} dateTime={`2026-09-${event.day}T${event.time}`}>{event.time}</motion.time>
+        <motion.span className="date-event-card__address" variants={cardItem}>{event.shortAddress}</motion.span>
+        <motion.span className="date-event-card__action" variants={cardItem}>Добавить в календарь <i aria-hidden="true">＋</i></motion.span>
+      </motion.span>
     </motion.button>
   );
 }
@@ -457,13 +637,13 @@ function Details() {
         <p className="eyebrow">Почему именно так</p>
         <h2>Без лишнего.<br /><em>По-настоящему.</em></h2>
       </motion.div>
-      <motion.div className="details-card" variants={revealWithoutFade}>
-        <span>01</span>
-        <p>Для нас важен этот день, поэтому мы проведём его не в ресторане, а на природе.</p>
+      <motion.div className="details-card" variants={cardSequence}>
+        <motion.span variants={cardItem}>01</motion.span>
+        <motion.p variants={cardItem}>Для нас важен этот день, поэтому мы проведём его не в ресторане, а на природе.</motion.p>
       </motion.div>
-      <motion.div className="details-card details-card--second" variants={revealWithoutFade}>
-        <span>02</span>
-        <p>Хотим прожить с вами искренний активный вечер, который вместе напишем словно сериал.</p>
+      <motion.div className="details-card details-card--second" variants={cardSequence}>
+        <motion.span variants={cardItem}>02</motion.span>
+        <motion.p variants={cardItem}>Хотим прожить с вами искренний активный вечер, который вместе напишем словно сериал.</motion.p>
       </motion.div>
       <Photo src={childPink} alt="Дарина в детстве" className="photo-details" rotate={8} />
     </motion.div>
@@ -504,6 +684,7 @@ function SlideContent({ id, guest, accepted, onRespond, goTo }) {
 }
 
 export default function App() {
+  const { isReady, progress } = useSitePreloader();
   const guest = useMemo(getGuest, []);
   const reducedMotion = useReducedMotion();
   const initialIndex = useMemo(getInitialIndex, []);
@@ -516,6 +697,7 @@ export default function App() {
   const activeSlide = slides[activeIndex];
 
   const goTo = (next) => {
+    if (!isReady) return;
     const requested = typeof next === "number" ? next : slides.findIndex(({ id }) => id === next);
     const target = Math.max(0, Math.min(slides.length - 1, requested));
     if (requested < 0 || target === activeIndexRef.current || lockedRef.current) return;
@@ -558,7 +740,7 @@ export default function App() {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [reducedMotion]);
+  }, [isReady, reducedMotion]);
 
   const respond = () => {
     setAccepted(true);
@@ -571,7 +753,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-    <main className={`story story--${activeSlide.theme}`}>
+    <main className={`story story--${activeSlide.theme}`} aria-busy={!isReady}>
       <div className="line-waves-backdrop" aria-hidden="true">
         <LineWaves
           speed={reducedMotion ? 0 : 0.18}
@@ -595,7 +777,7 @@ export default function App() {
       </header>
 
       <AnimatePresence initial={false} mode="wait" custom={direction}>
-        <motion.section
+        {isReady && <motion.section
           className={`story-panel story-panel--${activeSlide.id}`}
           id={activeSlide.id}
           data-slide
@@ -613,7 +795,7 @@ export default function App() {
             onRespond={respond}
             goTo={goTo}
           />
-        </motion.section>
+        </motion.section>}
       </AnimatePresence>
 
       <nav className="chapter-nav" aria-label="Разделы приглашения">
@@ -638,6 +820,10 @@ export default function App() {
           <button onClick={() => goTo(activeIndex + 1)} disabled={activeIndex === slides.length - 1} aria-label="Следующий экран">→</button>
         </div>
       </footer>
+
+      <AnimatePresence>
+        {!isReady && <LoadingScreen progress={progress} />}
+      </AnimatePresence>
     </main>
     </MotionConfig>
   );

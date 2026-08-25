@@ -66,6 +66,86 @@ button, a { -webkit-tap-highlight-color: transparent; }
   pointer-events: none;
 }
 
+/* Preloader */
+.loading-screen {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #482d32;
+  background-color: #e5ddd1;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(76, 51, 53, .025) 0, rgba(76, 51, 53, .025) 1px, transparent 1px, transparent 4px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .06) 0, rgba(255, 255, 255, .06) 1px, transparent 1px, transparent 5px);
+  text-align: center;
+  transform-origin: center;
+}
+.loading-screen::before,
+.loading-screen::after {
+  position: absolute;
+  width: min(72vw, 820px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(87, 52, 59, .1);
+  border-radius: 48% 52% 44% 56% / 55% 43% 57% 45%;
+  content: "";
+  pointer-events: none;
+}
+.loading-screen::before { top: -48%; left: -20%; transform: rotate(18deg); }
+.loading-screen::after { right: -24%; bottom: -56%; transform: rotate(-24deg); }
+.loading-screen__ornament {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 152px;
+  height: 152px;
+}
+.loading-screen__ornament::before,
+.loading-screen__ornament::after,
+.loading-screen__ornament > i {
+  position: absolute;
+  border: 1px solid rgba(82, 49, 56, .24);
+  border-radius: 50%;
+  content: "";
+}
+.loading-screen__ornament::before { inset: 0; }
+.loading-screen__ornament::after { inset: 11px; border-style: dashed; opacity: .55; }
+.loading-screen__ornament > i { inset: -7px 18px 7px -18px; border-color: rgba(132, 49, 63, .27); }
+.loading-screen__ornament > span {
+  position: relative;
+  z-index: 2;
+  color: #61323b;
+  font: 500 31px/1 "Cormorant Garamond", Georgia, serif;
+  letter-spacing: .04em;
+}
+.loading-screen__ornament b { margin: 0 5px; color: #9a4a55; font-size: .6em; font-weight: 500; }
+.loading-screen__copy { position: relative; z-index: 2; margin-top: 31px; }
+.loading-screen__copy p {
+  margin: 0 0 9px;
+  color: rgba(72, 45, 50, .58);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: .23em;
+  text-transform: uppercase;
+}
+.loading-screen__copy strong { font: italic 500 clamp(43px, 5.5vw, 68px)/.9 "Cormorant Garamond", Georgia, serif; letter-spacing: -.035em; }
+.loading-screen__progress {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(180px, 270px) 38px;
+  align-items: center;
+  gap: 14px;
+  width: min(330px, 76vw);
+  margin-top: 47px;
+}
+.loading-screen__progress > span { position: relative; display: block; height: 1px; overflow: hidden; background: rgba(72, 45, 50, .18); }
+.loading-screen__progress > span i { position: absolute; inset: 0; display: block; background: #84313f; transform-origin: left center; }
+.loading-screen__progress output { color: rgba(72, 45, 50, .62); font-size: 8px; font-weight: 600; letter-spacing: .1em; text-align: right; }
+
 .site-header {
   position: absolute;
   z-index: 30;
@@ -355,7 +435,7 @@ h2 em { font-weight: 500; }
 .celebration-layout { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
 .celebration-copy { position: relative; z-index: 5; max-width: 630px; padding-left: clamp(0px, 5vw, 70px); }
 .celebration-copy h2 em { color: #84313f; }
-.celebration-copy > p:not(.eyebrow) { width: min(450px, 90%); margin: 28px 0; color: var(--muted); font: 500 clamp(20px, 1.8vw, 28px)/1.2 "Cormorant Garamond", serif; }
+.celebration-intro > p:not(.eyebrow) { width: min(450px, 90%); margin: 28px 0; color: var(--muted); font: 500 clamp(20px, 1.8vw, 28px)/1.2 "Cormorant Garamond", serif; }
 .celebration-venue {
   width: min(520px, 100%);
   padding: 17px;
@@ -367,6 +447,7 @@ h2 em { font-weight: 500; }
 .celebration-venue__address { display: flex; align-items: flex-start; gap: 18px; }
 .celebration-venue__address > span { flex: 0 0 auto; color: #84313f; font: italic 500 34px/1 "Cormorant Garamond", serif; }
 .celebration-venue__address address { color: var(--muted); font: 500 16px/1.18 "Cormorant Garamond", serif; font-style: normal; }
+.celebration-venue__route { display: block; }
 .celebration-venue .route-link { margin-top: 14px; padding-block: 9px; }
 .parking-note {
   display: flex;
@@ -592,7 +673,7 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
   .celebration-layout { display: flex; flex-direction: column; justify-content: center; }
   .celebration-copy { z-index: 6; padding: 0; text-align: center; }
   .celebration-copy h2 { font-size: 61px; }
-  .celebration-copy > p:not(.eyebrow) { margin: 15px auto; font-size: 18px; }
+  .celebration-intro > p:not(.eyebrow) { margin: 15px auto; font-size: 18px; }
   .celebration-venue { width: min(94%, 420px); margin: 0 auto; padding: 12px; border-radius: 21px; text-align: left; }
   .celebration-venue__address { gap: 11px; }
   .celebration-venue__address > span { font-size: 28px; }
