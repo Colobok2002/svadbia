@@ -1,218 +1,396 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
 import { defaultGuest, guests, rsvpFormUrl } from "./data/guests";
-import WelcomeSlide from "./components/WelcomeSlide";
-import DreamSlide from "./components/DreamSlide";
-import SilkBackground from "./components/SilkBackground";
+import LineWaves from "./components/LineWaves/LineWaves";
 
-import childPinkA from "./assets/figma/raw-01.png";
+import girl from "./assets/figma/raw-01.png";
+import sleepingBaby from "./assets/figma/raw-02.png";
 import weddingPolaroidA from "./assets/figma/raw-03.png";
-import calendarInviteA from "./assets/figma/raw-05.png";
-import weddingPolaroidB from "./assets/figma/raw-07.png";
 import childhoodWeddingA from "./assets/figma/raw-08.png";
 import heartLineA from "./assets/figma/raw-09.png";
 import friendsA from "./assets/figma/raw-10.png";
 import childhoodWeddingB from "./assets/figma/raw-11.png";
-import calendarInviteB from "./assets/figma/raw-12.png";
 import friendsB from "./assets/figma/raw-14.png";
-import heartB from "./assets/figma/raw-15.png";
+import heart from "./assets/figma/raw-15.png";
 import heartLineB from "./assets/figma/raw-16.png";
-import childPinkB from "./assets/figma/raw-17.png";
-import clickHand from "./assets/figma/raw-18.png";
+import childPink from "./assets/figma/raw-17.png";
 
 const slides = [
-  ["welcome", "Начало"],
-  ["grow", "История"],
-  ["together", "Мы"],
-  ["invite", "Приглашение"],
-  ["registry", "Роспись"],
-  ["celebration", "Праздник"],
-  ["date", "Дата"],
-  ["details", "Детали"],
-  ["rsvp", "Ответ"],
+  { id: "welcome", label: "Начало", chapter: "Пролог", theme: "light" },
+  { id: "grow", label: "История", chapter: "01", theme: "light" },
+  { id: "together", label: "Мы", chapter: "02", theme: "light" },
+  { id: "invite", label: "Приглашение", chapter: "03", theme: "rose" },
+  { id: "registry", label: "Роспись", chapter: "04", theme: "rose" },
+  { id: "celebration", label: "Праздник", chapter: "05", theme: "rose" },
+  { id: "date", label: "Дата", chapter: "06", theme: "dark" },
+  { id: "details", label: "Детали", chapter: "07", theme: "dark" },
+  { id: "rsvp", label: "Ответ", chapter: "Финал", theme: "dark" },
 ];
+
+const panelVariants = {
+  enter: (direction) => ({
+    opacity: 0,
+    x: direction > 0 ? 90 : -90,
+    scale: 0.94,
+    filter: "blur(18px)",
+  }),
+  center: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] },
+  },
+  exit: (direction) => ({
+    opacity: 0,
+    x: direction > 0 ? -70 : 70,
+    scale: 1.035,
+    filter: "blur(12px)",
+    transition: { duration: 0.46, ease: [0.4, 0, 1, 1] },
+  }),
+};
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.09, delayChildren: 0.12 } },
+};
+
+const reveal = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
+};
 
 function getGuest() {
   const hash = window.location.hash.slice(1);
   const hashParams = new URLSearchParams(hash);
   const rawHashId = hashParams.get("id") || hash;
-  const hashId = slides.some(([slideId]) => slideId === rawHashId) ? "" : decodeURIComponent(rawHashId)
-    .trim()
-    .toLowerCase();
-  const queryId = new URLSearchParams(window.location.search)
-    .get("guest")
-    ?.trim()
-    .toLowerCase();
-  const id = hashId || queryId;
+  const hashId = slides.some(({ id }) => id === rawHashId)
+    ? ""
+    : decodeURIComponent(rawHashId).trim().toLowerCase();
+  const queryId = new URLSearchParams(window.location.search).get("guest")?.trim().toLowerCase();
+  const id = hashId || queryId || "";
   return { ...defaultGuest, ...(guests[id] || {}), id };
 }
 
-function getInitialSlide() {
+function getInitialIndex() {
   const hash = window.location.hash.slice(1);
-  return slides.some(([id]) => id === hash) ? hash : slides[0][0];
+  const index = slides.findIndex(({ id }) => id === hash);
+  return index < 0 ? 0 : index;
 }
 
-function SlideNav({ active, onNavigate }) {
+function Photo({ src, alt, className = "", rotate = 0, delay = 0 }) {
   return (
-    <nav className="slide-nav" aria-label="Навигация по приглашению">
-      {slides.map(([id, label]) => (
-        <a
-          href={`#${id}`}
-          key={id}
-          className={active === id ? "is-active" : ""}
-          aria-current={active === id ? "page" : undefined}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onNavigate(id);
-          }}
-        >
-          <span>{label}</span><i />
-        </a>
-      ))}
-    </nav>
+    <motion.figure
+      className={`editorial-photo ${className}`}
+      variants={reveal}
+      whileHover={{ scale: 1.025, rotate: rotate * 0.35, y: -5 }}
+      transition={{ type: "spring", stiffness: 180, damping: 18 }}
+    >
+      <motion.img
+        src={src}
+        alt={alt}
+        animate={{ y: [0, -7, 0], rotate: [rotate, rotate + 0.7, rotate] }}
+        transition={{ duration: 7.5, delay, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </motion.figure>
   );
 }
 
-function NextArrow({ href, label }) {
-  const arrowRef = useRef(null);
+function Intro({ goTo }) {
+  return (
+    <motion.div className="panel-layout hero-layout" variants={stagger} initial="hidden" animate="show">
+      <div className="hero-copy">
+        <motion.p className="eyebrow" variants={reveal}>Свадебное приглашение · 25.09.2026</motion.p>
+        <motion.h1 className="hero-title" variants={reveal}>
+          Илья <span>&amp;</span><br />Дарина
+        </motion.h1>
+        <motion.p className="hero-lead" variants={reveal}>
+          История, в которой самая важная глава начинается вместе с вами.
+        </motion.p>
+        <motion.button className="primary-action" onClick={() => goTo(1)} variants={reveal} whileTap={{ scale: 0.96 }}>
+          Открыть приглашение <span>↗</span>
+        </motion.button>
+      </div>
+      <motion.div className="hero-portrait" variants={reveal}>
+        <div className="hero-portrait__frame">
+          <img src={childhoodWeddingA} alt="Илья в костюме жениха и Дарина в образе невесты" />
+        </div>
+        <motion.div className="orbit-copy" animate={{ rotate: 360 }} transition={{ duration: 28, repeat: Infinity, ease: "linear" }}>
+          <span>НАША ИСТОРИЯ • НАШ ДЕНЬ • НАШИ ЛЮДИ • </span>
+        </motion.div>
+        <img className="hero-heart" src={heart} alt="" />
+      </motion.div>
+    </motion.div>
+  );
+}
 
-  useEffect(() => {
-    const element = arrowRef.current;
-    if (!element || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return undefined;
-    }
-
-    let frameId;
-    const startedAt = performance.now();
-    const animate = (now) => {
-      const seconds = (now - startedAt) / 1000;
-      const offset = Math.sin(seconds * Math.PI) * 7;
-      element.style.transform = `translateX(-50%) translateY(${offset}px)`;
-      frameId = requestAnimationFrame(animate);
-    };
-
-    frameId = requestAnimationFrame(animate);
-    return () => {
-      cancelAnimationFrame(frameId);
-      element.style.transform = "";
-    };
-  }, []);
+function DreamReveal() {
+  const [isRevealed, setIsRevealed] = useState(false);
+  const isTouchInteraction = () => window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
   return (
-    <a ref={arrowRef} className="next-arrow" href={href} aria-label={label}>
-      ↓
-    </a>
+    <motion.div
+      className="dream-reveal-card"
+      onHoverStart={() => setIsRevealed(true)}
+      onHoverEnd={() => setIsRevealed(false)}
+      onClick={() => {
+        if (isTouchInteraction()) setIsRevealed((current) => !current);
+      }}
+      onFocus={() => setIsRevealed(true)}
+      onBlur={() => setIsRevealed(false)}
+      tabIndex={0}
+      role="button"
+      aria-label={isRevealed ? "Показана Дарина в детстве" : "Узнать, о ком мечтал Илья"}
+    >
+      <AnimatePresence initial={false} mode="wait">
+        {!isRevealed ? (
+          <motion.div
+            key="question"
+            className="dream-scene dream-scene--question"
+            initial={{ opacity: 0, scale: 1.025, filter: "blur(18px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.975, filter: "blur(20px)" }}
+            transition={{ duration: 0.46, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <img className="dream-scene__boy" src={sleepingBaby} alt="Илья в детстве" />
+            <blockquote className="dream-thought">
+              Интересно,<br />кто будет<br /><em>моей женой?</em>
+            </blockquote>
+            <span className="dream-scene__hint">Наведи или нажми ↗</span>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="answer"
+            className="dream-scene dream-scene--answer"
+            initial={{ opacity: 0, scale: 1.04, filter: "blur(20px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 1.025, filter: "blur(18px)" }}
+            transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <img className="dream-scene__girl" src={girl} alt="Дарина в детстве" />
+            <div className="dream-answer">
+              <small>Спойлер из будущего</small>
+              <strong>Вот она.</strong>
+            </div>
+            <span className="dream-scene__hint">Ещё раз — вернуть сон ↙</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
+}
+
+function Grow() {
+  return (
+    <motion.div className="panel-layout story-layout" variants={stagger} initial="hidden" animate="show">
+      <motion.div className="chapter-copy" variants={reveal}>
+        <p className="eyebrow">Глава первая · когда мы были маленькими</p>
+        <h2>Сначала каждый<br />мечтал <em>о своём</em></h2>
+        <p>Мы ещё не знали друг друга, но жизнь уже тихо складывала нашу историю.</p>
+      </motion.div>
+      <div className="story-collage story-collage--dream">
+        <motion.div className="dream-reveal" variants={reveal}>
+          <DreamReveal />
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+function Together() {
+  return (
+    <motion.div className="panel-layout story-layout story-layout--reverse" variants={stagger} initial="hidden" animate="show">
+      <div className="story-collage story-collage--together">
+        <Photo src={childPink} alt="Дарина в детстве" className="photo-child-pink" rotate={-7} />
+        <Photo src={childhoodWeddingA} alt="Детская свадьба" className="photo-little-wedding" rotate={6} delay={0.8} />
+        <motion.img className="collage-line" src={heartLineB} alt="" variants={reveal} />
+      </div>
+      <motion.div className="chapter-copy" variants={reveal}>
+        <p className="eyebrow">Глава вторая · тот самый поворот</p>
+        <h2>А потом<br />мы нашли <em>друг друга</em></h2>
+        <p>И оказалось, что самые важные мечты сбываются совсем не так, как их представляешь.</p>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Invite({ guest }) {
+  return (
+    <motion.div className="panel-layout invite-layout" variants={stagger} initial="hidden" animate="show">
+      <motion.div className="invite-copy" variants={reveal}>
+        <p className="eyebrow">Теперь официально</p>
+        <h2>{guest.salutation},</h2>
+        <p className="invite-statement">мы скоро станем семьёй и хотим, чтобы вы были рядом в этот день.</p>
+      </motion.div>
+      <div className="invite-collage">
+        <Photo src={friendsA} alt="Илья и Дарина" className="photo-couple-cutout" rotate={-2} />
+        <Photo src={weddingPolaroidA} alt="Детская свадебная фотография" className="photo-polaroid" rotate={6} delay={1.4} />
+      </div>
+    </motion.div>
+  );
+}
+
+function Registry() {
+  return (
+    <motion.div className="panel-layout event-layout" variants={stagger} initial="hidden" animate="show">
+      <motion.div className="event-number" variants={reveal}>13:40</motion.div>
+      <motion.article className="event-card" variants={reveal}>
+        <p className="eyebrow">Сначала — главное</p>
+        <h2>Церемония</h2>
+        <p>Дворец бракосочетания</p>
+        <address>Чебоксары, Московский проспект,<br />38, корпус 5</address>
+        <div className="event-meta"><span>Пятница</span><span>25 сентября</span></div>
+      </motion.article>
+      <Photo src={childhoodWeddingB} alt="Детская свадебная фотография" className="photo-registry" rotate={7} />
+    </motion.div>
+  );
+}
+
+function Celebration() {
+  return (
+    <motion.div className="panel-layout celebration-layout" variants={stagger} initial="hidden" animate="show">
+      <motion.div className="celebration-copy" variants={reveal}>
+        <p className="eyebrow">А после — самое живое</p>
+        <h2>Праздник<br /><em>на природе</em></h2>
+        <p>Дом, тёплый вечер и люди, которых мы действительно хотим видеть рядом.</p>
+        <div className="time-chip"><span>17:00</span><small>Адрес дома будет здесь</small></div>
+      </motion.div>
+      <Photo src={friendsB} alt="Илья и Дарина" className="photo-celebration" rotate={-3} />
+      <motion.img className="celebration-heart" src={heart} alt="" variants={reveal} />
+    </motion.div>
+  );
+}
+
+function DateSlide() {
+  const calendar = [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+  return (
+    <motion.div className="panel-layout date-layout" variants={stagger} initial="hidden" animate="show">
+      <motion.div className="date-lockup" variants={reveal}>
+        <span>25</span>
+        <div><strong>сентября</strong><small>две тысячи двадцать шестого</small></div>
+      </motion.div>
+      <motion.div className="calendar-card" variants={reveal}>
+        <div className="calendar-card__head"><span>СЕН</span><strong>2026</strong></div>
+        <div className="calendar-week">{["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"].map((day) => <span key={day}>{day}</span>)}</div>
+        <div className="calendar-days">{calendar.map((day, index) => <i className={day === 25 ? "is-wedding" : ""} key={`${day}-${index}`}>{day}</i>)}</div>
+      </motion.div>
+      <motion.p className="date-aside" variants={reveal}>Сохраните этот день<br />для нашей истории</motion.p>
+    </motion.div>
+  );
+}
+
+function Details() {
+  return (
+    <motion.div className="panel-layout details-layout" variants={stagger} initial="hidden" animate="show">
+      <motion.div className="details-heading" variants={reveal}>
+        <p className="eyebrow">Почему именно так</p>
+        <h2>Без лишнего.<br /><em>По-настоящему.</em></h2>
+      </motion.div>
+      <motion.div className="details-card" variants={reveal}>
+        <span>01</span>
+        <p>Для нас важен этот день, поэтому мы проведём его не в ресторане, а на природе.</p>
+      </motion.div>
+      <motion.div className="details-card details-card--second" variants={reveal}>
+        <span>02</span>
+        <p>Хотим прожить с вами искренний активный вечер, который вместе напишем словно сериал.</p>
+      </motion.div>
+      <Photo src={childPink} alt="Дарина в детстве" className="photo-details" rotate={8} />
+    </motion.div>
+  );
+}
+
+function Rsvp({ guest, accepted, onRespond }) {
+  return (
+    <motion.div className="panel-layout rsvp-layout" variants={stagger} initial="hidden" animate="show">
+      <motion.p className="eyebrow" variants={reveal}>Последний, но важный вопрос</motion.p>
+      <motion.h2 variants={reveal}>{accepted ? "До встречи!" : "Вы будете с нами?"}</motion.h2>
+      <motion.p className="rsvp-lead" variants={reveal}>
+        {accepted
+          ? `${guest.name}, ваш ответ сохранён. Очень ждём вас 25 сентября.`
+          : `${guest.salutation}, дайте нам знать, сможете ли вы разделить этот день с нами.`}
+      </motion.p>
+      {!accepted && (
+        <motion.button className="primary-action primary-action--light" onClick={onRespond} variants={reveal} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}>
+          Да, я буду <span>♥</span>
+        </motion.button>
+      )}
+      <motion.img className="rsvp-line" src={heartLineA} alt="" variants={reveal} />
+      <motion.div className="rsvp-signature" variants={reveal}>Илья &amp; Дарина</motion.div>
+    </motion.div>
+  );
+}
+
+function SlideContent({ id, guest, accepted, onRespond, goTo }) {
+  if (id === "welcome") return <Intro goTo={goTo} />;
+  if (id === "grow") return <Grow />;
+  if (id === "together") return <Together />;
+  if (id === "invite") return <Invite guest={guest} />;
+  if (id === "registry") return <Registry />;
+  if (id === "celebration") return <Celebration />;
+  if (id === "date") return <DateSlide />;
+  if (id === "details") return <Details />;
+  return <Rsvp guest={guest} accepted={accepted} onRespond={onRespond} />;
 }
 
 export default function App() {
   const guest = useMemo(getGuest, []);
-  const [activeSlide, setActiveSlide] = useState(getInitialSlide);
-  const [rsvp, setRsvp] = useState(false);
-  const trackRef = useRef(null);
-  const activeIndexRef = useRef(Math.max(0, slides.findIndex(([id]) => id === getInitialSlide())));
-  const offsetRef = useRef(activeIndexRef.current * -100);
-  const animationRef = useRef(null);
+  const reducedMotion = useReducedMotion();
+  const initialIndex = useMemo(getInitialIndex, []);
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const [direction, setDirection] = useState(1);
+  const [accepted, setAccepted] = useState(false);
+  const activeIndexRef = useRef(initialIndex);
+  const lockedRef = useRef(false);
   const touchStartRef = useRef(null);
+  const activeSlide = slides[activeIndex];
 
-  const goToSlide = (idOrIndex) => {
-    const requestedIndex = typeof idOrIndex === "number"
-      ? idOrIndex
-      : slides.findIndex(([id]) => id === idOrIndex);
-    const targetIndex = Math.max(0, Math.min(slides.length - 1, requestedIndex));
-    if (requestedIndex < 0 || !trackRef.current) return;
-
-    const targetOffset = targetIndex * -100;
-    const startOffset = offsetRef.current;
-    const distance = targetOffset - startOffset;
-    cancelAnimationFrame(animationRef.current);
-    activeIndexRef.current = targetIndex;
-    setActiveSlide(slides[targetIndex][0]);
-    if (Math.abs(distance) < 0.01) return;
-
-    const startedAt = performance.now();
-    const duration = 560;
-    const animate = (now) => {
-      const progress = Math.min(1, (now - startedAt) / duration);
-      const eased = 1 - ((1 - progress) ** 3);
-      offsetRef.current = startOffset + distance * eased;
-      trackRef.current.style.transform = `translate3d(0, ${offsetRef.current}%, 0)`;
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        animationRef.current = null;
-      }
-    };
-    animationRef.current = requestAnimationFrame(animate);
+  const goTo = (next) => {
+    const requested = typeof next === "number" ? next : slides.findIndex(({ id }) => id === next);
+    const target = Math.max(0, Math.min(slides.length - 1, requested));
+    if (requested < 0 || target === activeIndexRef.current || lockedRef.current) return;
+    setDirection(target > activeIndexRef.current ? 1 : -1);
+    activeIndexRef.current = target;
+    setActiveIndex(target);
+    lockedRef.current = true;
+    window.setTimeout(() => { lockedRef.current = false; }, reducedMotion ? 80 : 760);
   };
 
-  const moveBy = (delta) => goToSlide(activeIndexRef.current + delta);
-
   useEffect(() => {
-    if (trackRef.current) {
-      trackRef.current.style.transform = `translate3d(0, ${offsetRef.current}%, 0)`;
-    }
-
     const onWheel = (event) => {
       event.preventDefault();
-      if (Math.abs(event.deltaY) < 12) return;
-      moveBy(event.deltaY > 0 ? 1 : -1);
+      if (Math.abs(event.deltaY) < 18) return;
+      goTo(activeIndexRef.current + (event.deltaY > 0 ? 1 : -1));
     };
     const onKeyDown = (event) => {
-      const keys = {
-        ArrowDown: 1,
-        PageDown: 1,
-        ArrowRight: 1,
-        ArrowUp: -1,
-        PageUp: -1,
-        ArrowLeft: -1,
-      };
-      if (keys[event.key]) {
+      const delta = ["ArrowDown", "ArrowRight", "PageDown"].includes(event.key)
+        ? 1
+        : ["ArrowUp", "ArrowLeft", "PageUp"].includes(event.key) ? -1 : 0;
+      if (delta) {
         event.preventDefault();
-        moveBy(keys[event.key]);
-      } else if (event.key === "Home") {
-        event.preventDefault();
-        goToSlide(0);
-      } else if (event.key === "End") {
-        event.preventDefault();
-        goToSlide(slides.length - 1);
+        goTo(activeIndexRef.current + delta);
       }
     };
-    const onTouchStart = (event) => {
-      touchStartRef.current = event.touches[0]?.clientY ?? null;
-    };
+    const onTouchStart = (event) => { touchStartRef.current = event.touches[0]?.clientY ?? null; };
     const onTouchEnd = (event) => {
       if (touchStartRef.current == null) return;
-      const endY = event.changedTouches[0]?.clientY ?? touchStartRef.current;
-      const distance = touchStartRef.current - endY;
+      const distance = touchStartRef.current - (event.changedTouches[0]?.clientY ?? touchStartRef.current);
       touchStartRef.current = null;
-      if (Math.abs(distance) >= 40) moveBy(distance > 0 ? 1 : -1);
+      if (Math.abs(distance) > 45) goTo(activeIndexRef.current + (distance > 0 ? 1 : -1));
     };
-
     window.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
     return () => {
-      cancelAnimationFrame(animationRef.current);
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, []);
-
-  const handleStoryClick = (event) => {
-    const link = event.target.closest("a[href^='#']");
-    if (!link || !event.currentTarget.contains(link)) return;
-    const id = link.getAttribute("href").slice(1);
-    if (!slides.some(([slideId]) => slideId === id)) return;
-    event.preventDefault();
-    goToSlide(id);
-  };
+  }, [reducedMotion]);
 
   const respond = () => {
-    setRsvp(true);
+    setAccepted(true);
     if (!rsvpFormUrl) return;
     const url = rsvpFormUrl
       .replace("{id}", encodeURIComponent(guest.id || "unknown"))
@@ -221,89 +399,75 @@ export default function App() {
   };
 
   return (
-    <main className="story" onClick={handleStoryClick}>
-      <SilkBackground />
-      <SlideNav active={activeSlide} onNavigate={goToSlide} />
-      <div className="slides" ref={trackRef}>
-        <WelcomeSlide />
-
-        <DreamSlide isActive={activeSlide === "grow"} />
-
-        <section className="slide together" id="together" data-slide>
-          <h2 className="together__question script">А кем ты хотел стать в детстве?</h2>
-          <img className="together__child" src={childPinkA} alt="Дарина в детстве" />
-          <img className="together__child-echo" src={childPinkB} alt="" />
-          <img className="together__hand" src={clickHand} alt="" />
-          <img className="together__wedding" src={childhoodWeddingA} alt="Илья и Дарина играют свадьбу" />
-          <img className="together__wedding-echo" src={childhoodWeddingB} alt="" />
-          <a className="figma-button" href="#invite">ВМЕСТЕ</a>
-        </section>
-
-        <section className="slide invite" id="invite" data-slide>
-          <img className="invite__friends" src={friendsA} alt="Илья и Дарина" />
-          <img className="invite__friends-echo" src={friendsB} alt="" />
-          <img className="invite__polaroid" src={weddingPolaroidA} alt="Детская фотография жениха и невесты" />
-          <img className="invite__polaroid-echo" src={weddingPolaroidB} alt="" />
-          <div className="invite__copy">
-            <p>{guest.salutation}, мы рады сообщить вам, что скоро станем семьёй</p>
-            <p>и хотим разделить с вами этот день</p>
-          </div>
-          <NextArrow href="#registry" label="К росписи" />
-        </section>
-
-        <section className="slide registry" id="registry" data-slide>
-          <div className="registry__copy">
-            <p>Приглашаем вас на роспись<br />по адресу:</p>
-            <strong>г. Чебоксары, Московский просп., 38, корп. 5</strong>
-            <em>в 13:40</em>
-          </div>
-          <img className="registry__wedding" src={childhoodWeddingB} alt="" />
-          <img className="registry__polaroid" src={weddingPolaroidB} alt="" />
-          <img className="registry__line" src={heartLineB} alt="" />
-          <NextArrow href="#celebration" label="К празднованию" />
-        </section>
-
-        <section className="slide celebration" id="celebration" data-slide>
-          <img className="celebration__friends" src={friendsB} alt="" />
-          <img className="celebration__heart" src={heartB} alt="" />
-          <div className="celebration__copy">
-            <p>и на празднование в домик<br />по адресу:</p>
-            <strong>Адрес дома</strong>
-            <em>в 17:00</em>
-          </div>
-          <NextArrow href="#date" label="К дате" />
-        </section>
-
-        <section className="slide date" id="date" data-slide>
-          <p className="date__month"><span>Сентябрь</span> 2026</p>
-          <img className="date__calendar" src={calendarInviteA} alt="Календарь сентября 2026" />
-          <img className="date__calendar-shadow" src={calendarInviteB} alt="" />
-          <p className="date__caption">НА НАГРАЖДЕНИЕ В ДОМИК<br />ПО АДРЕСУ:<br />АДРЕС ДОМА</p>
-          <div className="date__days" aria-label="Дни недели">П Н В Т С Р Ч Т П Т С Б В С</div>
-          <NextArrow href="#details" label="К деталям" />
-        </section>
-
-        <section className="slide details" id="details" data-slide>
-          <img className="details__heart" src={heartB} alt="" />
-          <img className="details__child" src={childPinkB} alt="" />
-          <p>Для нас очень важен этот день и мы решили провести его не совсем привычно — не в ресторане, а на природе.</p>
-          <p>Мы хотим провести с вами искренний активный вечер, который мы сами будем писать словно сценаристы сериала.</p>
-          <NextArrow href="#rsvp" label="К ответу" />
-        </section>
-
-        <section className="slide rsvp" id="rsvp" data-slide>
-          <img className="rsvp__line" src={heartLineA} alt="" />
-          <p>Для нас очень важен этот день, и мы решили провести его не совсем привычно — не в ресторане, а на природе.</p>
-          <p>Мы хотим провести с вами искренний активный вечер, который мы сами будем писать словно сценаристы сериала.</p>
-          {!rsvp ? (
-            <button className="figma-button figma-button--button" onClick={respond}>
-              ACCEPT
-            </button>
-          ) : (
-            <p className="rsvp__thanks">Спасибо, {guest.name}!<br />Очень ждём вас.</p>
-          )}
-        </section>
+    <MotionConfig reducedMotion="user">
+    <main className={`story story--${activeSlide.theme}`}>
+      <div className="line-waves-backdrop" aria-hidden="true">
+        <LineWaves
+          speed={reducedMotion ? 0 : 0.18}
+          innerLineCount={12}
+          outerLineCount={17}
+          warpIntensity={0.58}
+          rotation={-22}
+          colorCycleSpeed={0.22}
+          brightness={0.56}
+          color1="#702c3e"
+          color2="#79816e"
+          color3="#d19c93"
+          enableMouseInteraction={!reducedMotion}
+          mouseInfluence={0.28}
+        />
       </div>
+
+      <header className="site-header">
+        <button className="monogram" onClick={() => goTo(0)} aria-label="К началу">И<span>×</span>Д</button>
+        <div className="site-header__date">25 · 09 · 26</div>
+      </header>
+
+      <AnimatePresence initial={false} mode="sync" custom={direction}>
+        <motion.section
+          className={`story-panel story-panel--${activeSlide.id}`}
+          id={activeSlide.id}
+          data-slide
+          key={activeSlide.id}
+          custom={direction}
+          variants={panelVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+        >
+          <SlideContent
+            id={activeSlide.id}
+            guest={guest}
+            accepted={accepted}
+            onRespond={respond}
+            goTo={goTo}
+          />
+        </motion.section>
+      </AnimatePresence>
+
+      <nav className="chapter-nav" aria-label="Разделы приглашения">
+        {slides.map((slide, index) => (
+          <button
+            className={index === activeIndex ? "is-active" : ""}
+            onClick={() => goTo(index)}
+            aria-current={index === activeIndex ? "page" : undefined}
+            aria-label={slide.label}
+            data-target={slide.id}
+            key={slide.id}
+          >
+            <i /><span>{slide.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <footer className="site-footer">
+        <div className="chapter-counter"><span>{activeSlide.chapter}</span><i />{String(activeIndex + 1).padStart(2, "0")}</div>
+        <div className="footer-controls">
+          <button onClick={() => goTo(activeIndex - 1)} disabled={activeIndex === 0} aria-label="Предыдущий экран">←</button>
+          <button onClick={() => goTo(activeIndex + 1)} disabled={activeIndex === slides.length - 1} aria-label="Следующий экран">→</button>
+        </div>
+      </footer>
     </main>
+    </MotionConfig>
   );
 }

@@ -42,7 +42,9 @@ try {
     await page.goto(baseUrl, { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts?.ready);
 
-    const ids = await page.locator("[data-slide]").evaluateAll((elements) => elements.map((element) => element.id));
+    const ids = await page.locator(".chapter-nav [data-target]").evaluateAll(
+      (elements) => elements.map((element) => element.dataset.target),
+    );
     for (const id of ids) {
       // Query parameter forces a fresh React mount; hash-only navigation would
       // keep the previous active slide because the app owns slide state.
