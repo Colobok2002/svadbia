@@ -21,6 +21,7 @@ export const defaultGuest = {
   partySize: 2,
 };
 
+
 // Вставьте сюда ссылку на предзаполненную Google Form, когда она будет создана.
 // В ссылке используйте {id} и {guest} — сайт подставит нужные значения.
 // Пример: https://docs.google.com/forms/d/e/FORM_ID/viewform?entry.123456={id}&entry.789012={guest}
