@@ -3,7 +3,7 @@ import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/
 import { createPortal } from "react-dom";
 import ReactCardFlipModule from "react-card-flip";
 import { defaultGuest, guests, rsvpFormUrl } from "./data/guests";
-import GardenBackdrop from "./components/GardenBackdrop/GardenBackdrop";
+import PearlFilmBackdrop from "./components/PearlFilmBackdrop/PearlFilmBackdrop";
 
 import girl from "./assets/figma/raw-01.png";
 import sleepingBaby from "./assets/figma/raw-02.png";
@@ -821,8 +821,8 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
     <main className={`story story--${activeSlide.theme}`} aria-busy={!isReady}>
-      <div className="garden-backdrop-layer" aria-hidden="true">
-        <GardenBackdrop reducedMotion={reducedMotion} />
+      <div className="pearl-film-backdrop-layer" aria-hidden="true">
+        <PearlFilmBackdrop reducedMotion={reducedMotion} />
       </div>
 
       <header className="site-header">
