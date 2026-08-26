@@ -150,6 +150,12 @@ const mobilePanelVariants = {
   }),
 };
 
+const keepPanelComposited = (_, generatedTransform) => (
+  generatedTransform === "none"
+    ? "translateZ(0)"
+    : `${generatedTransform} translateZ(0)`
+);
+
 const stagger = {
   hidden: {},
   show: { transition: { staggerChildren: 0.035, delayChildren: 0.02 } },
@@ -435,7 +441,7 @@ function Intro({ goTo }) {
           История, в которой самая важная глава начинается вместе с вами.
         </motion.p>
         <motion.button className="primary-action" onClick={() => goTo(1)} variants={reveal} whileTap={{ scale: 0.96 }}>
-          Открыть приглашение <span>↗</span>
+          узнать подробнее че за суета <span>↗</span>
         </motion.button>
       </div>
       <motion.div className="hero-portrait" variants={reveal}>
@@ -801,9 +807,11 @@ export default function App() {
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(1);
   const [accepted, setAccepted] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const activeIndexRef = useRef(initialIndex);
   const lockedRef = useRef(false);
   const touchStartRef = useRef(null);
+  const transitionTimerRef = useRef();
   const activeSlide = slides[activeIndex];
 
   useEffect(() => {
@@ -821,8 +829,13 @@ export default function App() {
     setDirection(target > activeIndexRef.current ? 1 : -1);
     activeIndexRef.current = target;
     setActiveIndex(target);
+    setIsTransitioning(true);
     lockedRef.current = true;
-    window.setTimeout(() => { lockedRef.current = false; }, reducedMotion ? 80 : 980);
+    window.clearTimeout(transitionTimerRef.current);
+    transitionTimerRef.current = window.setTimeout(() => {
+      lockedRef.current = false;
+      setIsTransitioning(false);
+    }, reducedMotion ? 80 : mobile ? 720 : 980);
   };
 
   useEffect(() => {
@@ -857,7 +870,9 @@ export default function App() {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [isReady, reducedMotion]);
+  }, [isReady, mobile, reducedMotion]);
+
+  useEffect(() => () => window.clearTimeout(transitionTimerRef.current), []);
 
   const respond = () => {
     setAccepted(true);
@@ -872,7 +887,11 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <main className={`story story--${activeSlide.theme}`} aria-busy={!isReady}>
       <div className="pearl-film-backdrop-layer" aria-hidden="true">
-        <PearlFilmBackdrop reducedMotion={reducedMotion} mobile={mobile} />
+        <PearlFilmBackdrop
+          reducedMotion={reducedMotion}
+          mobile={mobile}
+          paused={mobile && isTransitioning}
+        />
       </div>
 
       <header className="site-header">
@@ -888,6 +907,7 @@ export default function App() {
           key={activeSlide.id}
           custom={direction}
           variants={mobile ? mobilePanelVariants : panelVariants}
+          transformTemplate={keepPanelComposited}
           initial="enter"
           animate="center"
           exit="exit"
