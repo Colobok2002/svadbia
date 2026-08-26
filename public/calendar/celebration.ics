@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Ilya and Darina//Wedding Invitation//RU
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:celebration-20260926@ilya-darina-wedding
+DTSTAMP:20260826T180000Z
+DTSTART:20260926T140000Z
+DTEND:20260926T205900Z
+SUMMARY:Свадьба Ильи и Дарины — праздник в доме
+DESCRIPTION:Праздник в доме. Будут баня и джакузи — возьмите тапочки и полотенце.
+LOCATION:Чандровская улица\, 79А\, деревня Чандрово\, городской округ Чебоксары\, Чувашская Республика — Чувашия
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
+import { createPortal } from "react-dom";
 import ReactCardFlipModule from "react-card-flip";
 import { defaultGuest, guests, rsvpFormUrl } from "./data/guests";
-import LineWaves from "./components/LineWaves/LineWaves";
+import GardenBackdrop from "./components/GardenBackdrop/GardenBackdrop";
 
 import girl from "./assets/figma/raw-01.png";
 import sleepingBaby from "./assets/figma/raw-02.png";
@@ -44,18 +45,6 @@ const celebrationVenue = {
   coordinates: "56.123282,47.090756",
 };
 
-const calendarLabels = {
-  "label.addtocalendar": "Добавить в календарь",
-  ical: "Файл календаря",
-  close: "Закрыть",
-  continue: "Продолжить",
-  cancel: "Отмена",
-  "modal.opensafari.ical.h": "Откройте Safari",
-  "modal.opensafari.ical.text": "На iPhone файл календаря надёжнее открывается через Safari.",
-  "modal.webview.ical.h": "Откройте в браузере",
-  "modal.webview.ical.text": "Встроенный браузер приложения может не открыть файл календаря.",
-};
-
 const weddingCalendarEvents = [
   {
     id: "registry",
@@ -65,6 +54,7 @@ const weddingCalendarEvents = [
     eyebrow: "День первый",
     title: "Церемония в ЗАГСе",
     shortAddress: "Московский проспект, 38к5",
+    icsFile: "registry.ics",
     calendar: {
       name: "Свадьба Ильи и Дарины — церемония в ЗАГСе",
       description: "Церемония бракосочетания Ильи и Дарины.",
@@ -74,15 +64,6 @@ const weddingCalendarEvents = [
       endTime: "15:00",
       timeZone: "Europe/Moscow",
       location: registryVenue.address,
-      status: "CONFIRMED",
-      options: ["Apple", "Google", "iCal"],
-      optionsMobile: ["Google", "iCal"],
-      optionsIOS: ["Apple", "Google", "iCal"],
-      iCalFileName: "ilya-darina-registry",
-      listStyle: "modal",
-      forceOverlay: true,
-      lightMode: "light",
-      customLabels: calendarLabels,
     },
   },
   {
@@ -93,6 +74,7 @@ const weddingCalendarEvents = [
     eyebrow: "День второй",
     title: "Праздник в доме",
     shortAddress: "Чандровская улица, 79А",
+    icsFile: "celebration.ics",
     calendar: {
       name: "Свадьба Ильи и Дарины — праздник в доме",
       description: "Праздник в доме. Будут баня и джакузи — возьмите тапочки и полотенце.",
@@ -102,18 +84,23 @@ const weddingCalendarEvents = [
       endTime: "23:59",
       timeZone: "Europe/Moscow",
       location: celebrationVenue.address,
-      status: "CONFIRMED",
-      options: ["Apple", "Google", "iCal"],
-      optionsMobile: ["Google", "iCal"],
-      optionsIOS: ["Apple", "Google", "iCal"],
-      iCalFileName: "ilya-darina-celebration",
-      listStyle: "modal",
-      forceOverlay: true,
-      lightMode: "light",
-      customLabels: calendarLabels,
     },
   },
 ];
+
+function getGoogleCalendarUrl(event) {
+  const { calendar } = event;
+  const compact = (date, time) => `${date.replaceAll("-", "")}T${time.replace(":", "")}00`;
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: calendar.name,
+    dates: `${compact(calendar.startDate, calendar.startTime)}/${compact(calendar.endDate, calendar.endTime)}`,
+    ctz: calendar.timeZone,
+    details: calendar.description,
+    location: calendar.location,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
 
 const slides = [
   { id: "welcome", label: "Начало", chapter: "Пролог", theme: "light" },
@@ -200,6 +187,28 @@ const cardContentSequence = {
 const cardItem = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.52, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const chooserDialog = {
+  hidden: { opacity: 0, y: 34, scale: 0.97 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.16, 1, 0.3, 1],
+      staggerChildren: 0.075,
+      delayChildren: 0.1,
+    },
+  },
+  exit: { opacity: 0, y: 20, scale: 0.985, transition: { duration: 0.26, ease: [0.4, 0, 1, 1] } },
+};
+
+const chooserItem = {
+  hidden: { opacity: 0, y: 13 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.48, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, y: 6, transition: { duration: 0.16 } },
 };
 
 function preloadImage(src, onDone) {
@@ -581,22 +590,14 @@ function Celebration() {
   );
 }
 
-function CalendarEventCard({ event }) {
-  const buttonRef = useRef(null);
-
-  const addToCalendar = async () => {
-    const { atcb_action } = await import("add-to-calendar-button");
-    await atcb_action(event.calendar, buttonRef.current);
-  };
-
+function CalendarEventCard({ event, onChoose }) {
   return (
     <motion.button
-      ref={buttonRef}
       type="button"
       className={`date-event-card date-event-card--${event.id}`}
       variants={cardSequence}
       whileTap={{ scale: 0.975 }}
-      onClick={addToCalendar}
+      onClick={() => onChoose(event)}
       aria-label={`Добавить в календарь: ${event.title}, ${event.day} сентября в ${event.time}`}
     >
       <motion.span className="date-event-card__sheet" variants={cardItem}>
@@ -615,7 +616,68 @@ function CalendarEventCard({ event }) {
   );
 }
 
+function CalendarChooser({ event, onClose }) {
+  const icsUrl = `${import.meta.env.BASE_URL}calendar/${event.icsFile}`;
+  const googleUrl = getGoogleCalendarUrl(event);
+
+  useEffect(() => {
+    const closeOnEscape = (keyboardEvent) => {
+      if (keyboardEvent.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return createPortal(
+    <motion.div
+      className="calendar-chooser"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.24 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="calendar-chooser__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calendar-chooser-title"
+        variants={chooserDialog}
+        initial="hidden"
+        animate="show"
+        exit="exit"
+        onClick={(clickEvent) => clickEvent.stopPropagation()}
+      >
+        <motion.button className="calendar-chooser__close" type="button" onClick={onClose} aria-label="Закрыть" variants={chooserItem}>×</motion.button>
+        <motion.p variants={chooserItem}>{event.day} сентября · {event.time}</motion.p>
+        <motion.h3 id="calendar-chooser-title" variants={chooserItem}>Куда добавить событие?</motion.h3>
+        <div className="calendar-chooser__options">
+          <motion.a href={icsUrl} target="_blank" rel="noreferrer" onClick={onClose} variants={chooserItem} whileTap={{ scale: 0.975 }}>
+            <i aria-hidden="true">A</i>
+            <span><strong>Apple Calendar</strong><small>Открыть на iPhone или Mac</small></span>
+            <b aria-hidden="true">↗</b>
+          </motion.a>
+          <motion.a href={googleUrl} target="_blank" rel="noreferrer" onClick={onClose} variants={chooserItem} whileTap={{ scale: 0.975 }}>
+            <i aria-hidden="true">G</i>
+            <span><strong>Google Calendar</strong><small>Добавить через аккаунт Google</small></span>
+            <b aria-hidden="true">↗</b>
+          </motion.a>
+          <motion.a href={icsUrl} download={event.icsFile} onClick={onClose} variants={chooserItem} whileTap={{ scale: 0.975 }}>
+            <i aria-hidden="true">↓</i>
+            <span><strong>Файл .ics</strong><small>Для другого приложения календаря</small></span>
+            <b aria-hidden="true">↗</b>
+          </motion.a>
+        </div>
+        <motion.small className="calendar-chooser__hint" variants={chooserItem}>Если приглашение открыто внутри Telegram, для Apple Calendar лучше открыть страницу в Safari.</motion.small>
+      </motion.div>
+    </motion.div>,
+    document.body,
+  );
+}
+
 function DateSlide() {
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
   return (
     <motion.div className="panel-layout date-layout" variants={stagger} initial="hidden" animate="show">
       <motion.div className="date-heading" variants={reveal}>
@@ -624,8 +686,13 @@ function DateSlide() {
         <p>Нажмите на нужный день — событие откроется в календаре вашего телефона.</p>
       </motion.div>
       <div className="date-events">
-        {weddingCalendarEvents.map((event) => <CalendarEventCard event={event} key={event.id} />)}
+        {weddingCalendarEvents.map((event) => (
+          <CalendarEventCard event={event} onChoose={setSelectedEvent} key={event.id} />
+        ))}
       </div>
+      <AnimatePresence>
+        {selectedEvent && <CalendarChooser event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -754,21 +821,8 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
     <main className={`story story--${activeSlide.theme}`} aria-busy={!isReady}>
-      <div className="line-waves-backdrop" aria-hidden="true">
-        <LineWaves
-          speed={reducedMotion ? 0 : 0.18}
-          innerLineCount={12}
-          outerLineCount={17}
-          warpIntensity={0.58}
-          rotation={-22}
-          colorCycleSpeed={0.22}
-          brightness={0.56}
-          color1="#702c3e"
-          color2="#79816e"
-          color3="#d19c93"
-          enableMouseInteraction={!reducedMotion}
-          mouseInfluence={0.28}
-        />
+      <div className="garden-backdrop-layer" aria-hidden="true">
+        <GardenBackdrop reducedMotion={reducedMotion} />
       </div>
 
       <header className="site-header">

@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Ilya and Darina//Wedding Invitation//RU
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:registry-20260925@ilya-darina-wedding
+DTSTAMP:20260826T180000Z
+DTSTART:20260925T104000Z
+DTEND:20260925T120000Z
+SUMMARY:Свадьба Ильи и Дарины — церемония в ЗАГСе
+DESCRIPTION:Церемония бракосочетания Ильи и Дарины.
+LOCATION:Московский проспект\, 38к5\, Чебоксары\, Чувашская Республика — Чувашия
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR
