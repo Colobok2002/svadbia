@@ -10,6 +10,8 @@
     "screenshot": "node scripts/screenshot.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/cormorant-garamond": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
     "@vitejs/plugin-react": "latest",
     "motion": "^13.1.0",
     "ogl": "^1.0.11",

@@ -241,6 +241,7 @@ function preloadImage(src, onDone) {
 function useSitePreloader() {
   const [progress, setProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,10 +254,21 @@ function useSitePreloader() {
     };
 
     const imageTasks = preloadSources.map((src) => preloadImage(src, markDone));
-    const fontTask = Promise.race([
-      document.fonts?.ready ?? Promise.resolve(),
-      new Promise((resolve) => window.setTimeout(resolve, 5000)),
-    ]).catch(() => {}).then(markDone);
+    const requestedFonts = document.fonts
+      ? Promise.all([
+          document.fonts.load('500 68px "Cormorant Garamond Variable"', "Один момент Илья Дарина"),
+          document.fonts.load('italic 500 68px "Cormorant Garamond Variable"', "Один момент"),
+          document.fonts.load('600 10px "Manrope Variable"', "Собираем нашу историю 100%"),
+        ]).then(() => document.fonts.ready)
+      : Promise.resolve();
+    const fontTask = requestedFonts
+      .catch(() => {})
+      .then(async () => {
+        if (!cancelled) setFontsReady(true);
+        markDone();
+        // Give the correctly rendered loader copy time to appear before the exit animation.
+        await new Promise((resolve) => window.setTimeout(resolve, 480));
+      });
     const minimumDisplay = new Promise((resolve) => window.setTimeout(resolve, 900));
 
     Promise.all([Promise.all([...imageTasks, fontTask]), minimumDisplay]).then(() => {
@@ -270,13 +282,13 @@ function useSitePreloader() {
     };
   }, []);
 
-  return { isReady, progress };
+  return { isReady, progress, fontsReady };
 }
 
-function LoadingScreen({ progress }) {
+function LoadingScreen({ progress, fontsReady }) {
   return (
     <motion.div
-      className="loading-screen"
+      className={`loading-screen${fontsReady ? " loading-screen--fonts-ready" : ""}`}
       role="status"
       aria-live="polite"
       initial={{ opacity: 1 }}
@@ -751,7 +763,7 @@ function SlideContent({ id, guest, accepted, onRespond, goTo }) {
 }
 
 export default function App() {
-  const { isReady, progress } = useSitePreloader();
+  const { isReady, progress, fontsReady } = useSitePreloader();
   const guest = useMemo(getGuest, []);
   const reducedMotion = useReducedMotion();
   const initialIndex = useMemo(getInitialIndex, []);
@@ -876,7 +888,7 @@ export default function App() {
       </footer>
 
       <AnimatePresence>
-        {!isReady && <LoadingScreen progress={progress} />}
+        {!isReady && <LoadingScreen progress={progress} fontsReady={fontsReady} />}
       </AnimatePresence>
     </main>
     </MotionConfig>
