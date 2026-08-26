@@ -51,6 +51,8 @@ export default function Iridescence({
   speed = 1,
   amplitude = 0.1,
   pointerReact = false,
+  dpr = 1.5,
+  maxFps = 60,
   className = "",
 }) {
   const containerRef = useRef(null);
@@ -59,7 +61,7 @@ export default function Iridescence({
     const container = containerRef.current;
     if (!container) return undefined;
 
-    const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio, 1.5) });
+    const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio, dpr) });
     const { gl } = renderer;
     gl.clearColor(1, 1, 1, 1);
     container.replaceChildren(gl.canvas);
@@ -97,9 +99,14 @@ export default function Iridescence({
     };
 
     let frame;
+    let previousFrameTime = 0;
+    const frameInterval = 1000 / maxFps;
     const render = (time) => {
-      program.uniforms.uTime.value = time * 0.001;
-      if (!document.hidden) renderer.render({ scene: mesh });
+      if (!document.hidden && time - previousFrameTime >= frameInterval) {
+        previousFrameTime = time - ((time - previousFrameTime) % frameInterval);
+        program.uniforms.uTime.value = time * 0.001;
+        renderer.render({ scene: mesh });
+      }
       frame = window.requestAnimationFrame(render);
     };
 
@@ -115,7 +122,7 @@ export default function Iridescence({
       gl.getExtension("WEBGL_lose_context")?.loseContext();
       gl.canvas.remove();
     };
-  }, [amplitude, color, pointerReact, speed]);
+  }, [amplitude, color, dpr, maxFps, pointerReact, speed]);
 
   return <div ref={containerRef} className={`iridescence-container ${className}`.trim()} />;
 }

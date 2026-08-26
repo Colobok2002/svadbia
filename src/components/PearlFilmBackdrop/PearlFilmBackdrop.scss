@@ -42,10 +42,11 @@
 
 @media (max-width: 820px) {
   .pearl-film-backdrop__light {
-    opacity: .78;
-    filter: saturate(.76) contrast(.9) brightness(1.1);
-    transform: scale(1.14) rotate(-4deg);
+    opacity: .48;
+    filter: none;
+    mix-blend-mode: normal;
+    transform: none;
   }
 
-  .pearl-film-backdrop__grain { opacity: .045; }
+  .pearl-film-backdrop__grain { display: none; }
 }

@@ -133,6 +133,23 @@ const panelVariants = {
   }),
 };
 
+const mobilePanelVariants = {
+  enter: (direction) => ({
+    opacity: 0,
+    y: direction > 0 ? 14 : -14,
+  }),
+  center: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.48, ease: [0.16, 1, 0.3, 1] },
+  },
+  exit: (direction) => ({
+    opacity: 0,
+    y: direction > 0 ? -8 : 8,
+    transition: { duration: 0.16, ease: [0.4, 0, 1, 1] },
+  }),
+};
+
 const stagger = {
   hidden: {},
   show: { transition: { staggerChildren: 0.035, delayChildren: 0.02 } },
@@ -342,6 +359,9 @@ function getInitialIndex() {
 }
 
 function Photo({ src, alt, className = "", rotate = 0, delay = 0 }) {
+  const reducedMotion = useReducedMotion();
+  const canFloat = !reducedMotion && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
   return (
     <motion.figure
       className={`editorial-photo ${className}`}
@@ -352,8 +372,10 @@ function Photo({ src, alt, className = "", rotate = 0, delay = 0 }) {
       <motion.img
         src={src}
         alt={alt}
-        animate={{ y: [0, -7, 0], rotate: [rotate, rotate + 0.7, rotate] }}
-        transition={{ duration: 7.5, delay, repeat: Infinity, ease: "easeInOut" }}
+        animate={canFloat ? { y: [0, -7, 0], rotate: [rotate, rotate + 0.7, rotate] } : { y: 0, rotate }}
+        transition={canFloat
+          ? { duration: 7.5, delay, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 0 }}
       />
     </motion.figure>
   );
@@ -448,13 +470,21 @@ function DreamReveal() {
         onClick={toggleReveal}
         aria-label="Узнать, о ком мечтал Илья"
       >
-        <span className="dream-scene dream-scene--question">
+        <motion.span
+          className="dream-scene dream-scene--question"
+          initial={false}
+          animate={{ opacity: isRevealed ? 0 : 1 }}
+          transition={{
+            duration: isRevealed ? 0.1 : 0.24,
+            delay: isRevealed ? 0 : 0.28,
+          }}
+        >
           <motion.img className="dream-scene__boy" src={sleepingBaby} alt="Илья в детстве" variants={cardItem} />
           <motion.span className="dream-thought" variants={cardItem}>
             Интересно,<br />кто будет<br /><em>моей женой?</em>
           </motion.span>
           <motion.span className="dream-scene__hint" variants={cardItem}>Нажми на карточку ↗</motion.span>
-        </span>
+        </motion.span>
       </button>
 
       <button
@@ -766,6 +796,7 @@ export default function App() {
   const { isReady, progress, fontsReady } = useSitePreloader();
   const guest = useMemo(getGuest, []);
   const reducedMotion = useReducedMotion();
+  const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 820px)").matches);
   const initialIndex = useMemo(getInitialIndex, []);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(1);
@@ -774,6 +805,13 @@ export default function App() {
   const lockedRef = useRef(false);
   const touchStartRef = useRef(null);
   const activeSlide = slides[activeIndex];
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 820px)");
+    const updateMobile = () => setMobile(media.matches);
+    media.addEventListener?.("change", updateMobile);
+    return () => media.removeEventListener?.("change", updateMobile);
+  }, []);
 
   const goTo = (next) => {
     if (!isReady) return;
@@ -834,7 +872,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <main className={`story story--${activeSlide.theme}`} aria-busy={!isReady}>
       <div className="pearl-film-backdrop-layer" aria-hidden="true">
-        <PearlFilmBackdrop reducedMotion={reducedMotion} />
+        <PearlFilmBackdrop reducedMotion={reducedMotion} mobile={mobile} />
       </div>
 
       <header className="site-header">
@@ -849,7 +887,7 @@ export default function App() {
           data-slide
           key={activeSlide.id}
           custom={direction}
-          variants={panelVariants}
+          variants={mobile ? mobilePanelVariants : panelVariants}
           initial="enter"
           animate="center"
           exit="exit"
