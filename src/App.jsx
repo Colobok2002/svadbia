@@ -264,7 +264,6 @@ function preloadImage(src, onDone) {
 function useSitePreloader() {
   const [progress, setProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
-  const [fontsReady, setFontsReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -287,9 +286,8 @@ function useSitePreloader() {
     const fontTask = requestedFonts
       .catch(() => {})
       .then(async () => {
-        if (!cancelled) setFontsReady(true);
         markDone();
-        // Give the correctly rendered loader copy time to appear before the exit animation.
+        // Keep the completed state visible briefly before the exit animation.
         await new Promise((resolve) => window.setTimeout(resolve, 480));
       });
     const minimumDisplay = new Promise((resolve) => window.setTimeout(resolve, 900));
@@ -305,13 +303,13 @@ function useSitePreloader() {
     };
   }, []);
 
-  return { isReady, progress, fontsReady };
+  return { isReady, progress };
 }
 
-function LoadingScreen({ progress, fontsReady }) {
+function LoadingScreen({ progress }) {
   return (
     <motion.div
-      className={`loading-screen${fontsReady ? " loading-screen--fonts-ready" : ""}`}
+      className="loading-screen"
       role="status"
       aria-live="polite"
       initial={{ opacity: 1 }}
@@ -799,7 +797,7 @@ function SlideContent({ id, guest, accepted, onRespond, goTo }) {
 }
 
 export default function App() {
-  const { isReady, progress, fontsReady } = useSitePreloader();
+  const { isReady, progress } = useSitePreloader();
   const guest = useMemo(getGuest, []);
   const reducedMotion = useReducedMotion();
   const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 820px)").matches);
@@ -807,7 +805,6 @@ export default function App() {
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(1);
   const [accepted, setAccepted] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const activeIndexRef = useRef(initialIndex);
   const lockedRef = useRef(false);
   const touchStartRef = useRef(null);
@@ -829,12 +826,10 @@ export default function App() {
     setDirection(target > activeIndexRef.current ? 1 : -1);
     activeIndexRef.current = target;
     setActiveIndex(target);
-    setIsTransitioning(true);
     lockedRef.current = true;
     window.clearTimeout(transitionTimerRef.current);
     transitionTimerRef.current = window.setTimeout(() => {
       lockedRef.current = false;
-      setIsTransitioning(false);
     }, reducedMotion ? 80 : mobile ? 720 : 980);
   };
 
@@ -890,7 +885,6 @@ export default function App() {
         <PearlFilmBackdrop
           reducedMotion={reducedMotion}
           mobile={mobile}
-          paused={mobile && isTransitioning}
         />
       </div>
 
@@ -946,7 +940,7 @@ export default function App() {
       </footer>
 
       <AnimatePresence>
-        {!isReady && <LoadingScreen progress={progress} fontsReady={fontsReady} />}
+        {!isReady && <LoadingScreen progress={progress} />}
       </AnimatePresence>
     </main>
     </MotionConfig>

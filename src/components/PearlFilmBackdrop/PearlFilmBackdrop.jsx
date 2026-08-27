@@ -3,7 +3,7 @@ import "./PearlFilmBackdrop.scss";
 
 const pearlColor = [0.92, 0.83, 0.78];
 
-export default function PearlFilmBackdrop({ reducedMotion = false, mobile = false, paused = false }) {
+export default function PearlFilmBackdrop({ reducedMotion = false, mobile = false }) {
   return (
     <div className="pearl-film-backdrop">
       <Iridescence
@@ -14,7 +14,6 @@ export default function PearlFilmBackdrop({ reducedMotion = false, mobile = fals
         pointerReact={false}
         dpr={mobile ? 1 : 1.5}
         maxFps={mobile ? 30 : 60}
-        paused={paused}
       />
 
       <svg className="pearl-film-backdrop__grain" aria-hidden="true">

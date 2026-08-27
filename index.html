@@ -5,9 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f5f0e8" />
     <title>Илья & Дарина — приглашение</title>
+    <style>
+      .boot-loader {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        gap: 16px;
+        align-content: center;
+        color: #61323b;
+        background: #e5ddd1;
+        font: 600 11px/1.2 Arial, sans-serif;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+      }
+      .boot-loader__spinner {
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(97, 50, 59, .2);
+        border-top-color: #84313f;
+        border-radius: 50%;
+        animation: boot-loader-spin .8s linear infinite;
+      }
+      @keyframes boot-loader-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-loader__spinner { animation-duration: 1.8s; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-loader" role="status" aria-label="Загрузка приглашения">
+        <span class="boot-loader__spinner" aria-hidden="true"></span>
+        <span>Загрузка приглашения</span>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -53,15 +53,9 @@ export default function Iridescence({
   pointerReact = false,
   dpr = 1.5,
   maxFps = 60,
-  paused = false,
   className = "",
 }) {
   const containerRef = useRef(null);
-  const pausedRef = useRef(paused);
-
-  useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -108,7 +102,7 @@ export default function Iridescence({
     let previousFrameTime = 0;
     const frameInterval = 1000 / maxFps;
     const render = (time) => {
-      if (!pausedRef.current && !document.hidden && time - previousFrameTime >= frameInterval) {
+      if (!document.hidden && time - previousFrameTime >= frameInterval) {
         previousFrameTime = time - ((time - previousFrameTime) % frameInterval);
         program.uniforms.uTime.value = time * 0.001;
         renderer.render({ scene: mesh });
