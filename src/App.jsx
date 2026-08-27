@@ -1,36 +1,52 @@
-import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
-import { createPortal } from "react-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactCardFlipModule from "react-card-flip";
-import { defaultGuest, guests, rsvpFormUrl } from "./data/guests";
+import { createPortal } from "react-dom";
 import PearlFilmBackdrop from "./components/PearlFilmBackdrop/PearlFilmBackdrop";
+import { defaultGuest, guests } from "./data/guests";
 
 import girl from "./assets/figma/raw-01.png";
 import sleepingBaby from "./assets/figma/raw-02.png";
-import weddingPolaroidA from "./assets/figma/raw-03.png";
 import childhoodWeddingA from "./assets/figma/raw-08.png";
 import heartLineA from "./assets/figma/raw-09.png";
 import friendsA from "./assets/figma/raw-10.png";
-import childhoodWeddingB from "./assets/figma/raw-11.png";
-import friendsB from "./assets/figma/raw-14.png";
 import heart from "./assets/figma/raw-15.png";
-import heartLineB from "./assets/figma/raw-16.png";
-import childPink from "./assets/figma/raw-17.png";
+import celebrationBbq from "./assets/figma/celebration-bbq.jpg";
+import celebrationConcert from "./assets/figma/celebration-concert.jpg";
+import celebrationDj from "./assets/figma/celebration-dj.jpg";
+import celebrationHouse from "./assets/figma/celebration-house.jpg";
+import celebrationJacuzzi from "./assets/figma/celebration-jacuzzi.png";
+import celebrationKaraoke from "./assets/figma/celebration-karaoke.jpg";
+import celebrationSauna from "./assets/figma/celebration-sauna.jpg";
+import celebrationToast from "./assets/figma/celebration-toast.jpg";
+import heroWeddingPhoto from "./assets/figma/slide-1.png";
+import inviteRings from "./assets/figma/invite-rings.png";
+import registryKids from "./assets/figma/registry-kids.png";
+import storyArcherPhoto from "./assets/figma/story-archer.png";
+import storyKeysPhoto from "./assets/figma/story-keys.png";
 
 const ReactCardFlip = ReactCardFlipModule.default ?? ReactCardFlipModule;
 
 const preloadSources = [
   girl,
   sleepingBaby,
-  weddingPolaroidA,
+  heroWeddingPhoto,
+  inviteRings,
+  registryKids,
+  storyArcherPhoto,
+  storyKeysPhoto,
   childhoodWeddingA,
   heartLineA,
   friendsA,
-  childhoodWeddingB,
-  friendsB,
+  celebrationHouse,
+  celebrationJacuzzi,
+  celebrationSauna,
+  celebrationBbq,
+  celebrationConcert,
+  celebrationToast,
+  celebrationDj,
+  celebrationKaraoke,
   heart,
-  heartLineB,
-  childPink,
 ];
 
 const registryVenue = {
@@ -44,6 +60,48 @@ const celebrationVenue = {
   address: "Чандровская улица, 79А, деревня Чандрово, городской округ Чебоксары, Чувашская Республика — Чувашия",
   coordinates: "56.123282,47.090756",
 };
+
+const celebrationPhotos = [
+  { src: celebrationHouse, label: "Дом", alt: "Загородный дом, где пройдёт праздник" },
+  { src: celebrationJacuzzi, label: "Джакузи", alt: "Джакузи для гостей праздника" },
+  { src: celebrationSauna, label: "Баня", alt: "Тёплая деревянная баня" },
+  { src: celebrationBbq, label: "Шашлык", alt: "Шашлык на мангале для праздничного вечера" },
+  { src: celebrationConcert, label: "Музыка", alt: "Яркий концерт и гости праздника" },
+  { src: celebrationToast, label: "За нас", alt: "Гости поднимают бокалы за молодожёнов" },
+  { src: celebrationDj, label: "Танцы", alt: "Собака-диджей за проигрывателем" },
+  { src: celebrationKaraoke, label: "Караоке", alt: "Микрофоны для праздничного караоке" },
+];
+
+const telegramInviteUrl = "https://t.me/+13sjd8qlNRpjNTUy";
+
+const wideHeartPath = {
+  x: [24, 120, 300, 480, 576, 480, 300, 120, 24],
+  y: [270, 94, 26, 94, 270, 438, 498, 438, 270],
+};
+const tallHeartPath = {
+  x: [300, 414, 468, 414, 300, 186, 132, 186, 300],
+  y: [12, 94, 260, 426, 508, 426, 260, 94, 12],
+};
+const middleHeartPath = {
+  x: [72, 180, 300, 420, 528, 420, 300, 180, 72],
+  y: [250, 140, 104, 140, 250, 364, 410, 364, 250],
+};
+const storyHeartParticles = [
+  { path: wideHeartPath, duration: 10, phase: 0, size: "is-large" },
+  { path: wideHeartPath, duration: 10, phase: 3, size: "" },
+  { path: wideHeartPath, duration: 10, phase: 6, size: "is-small" },
+  { path: tallHeartPath, duration: 8.5, phase: 1, size: "" },
+  { path: tallHeartPath, duration: 8.5, phase: 5, size: "is-large" },
+  { path: middleHeartPath, duration: 7.5, phase: 2, size: "is-small" },
+  { path: middleHeartPath, duration: 7.5, phase: 6, size: "" },
+];
+
+function phaseHeartPath(values, phase) {
+  const loop = values.slice(0, -1);
+  const start = phase % loop.length;
+  const phased = [...loop.slice(start), ...loop.slice(0, start)];
+  return [...phased, phased[0]];
+}
 
 const weddingCalendarEvents = [
   {
@@ -72,12 +130,12 @@ const weddingCalendarEvents = [
     weekday: "суббота",
     time: "17:00",
     eyebrow: "День второй",
-    title: "Праздник в доме",
+    title: "Праздник в загородном доме",
     shortAddress: "Чандровская улица, 79А",
     icsFile: "celebration.ics",
     calendar: {
-      name: "Свадьба Ильи и Дарины — праздник в доме",
-      description: "Праздник в доме. Будут баня и джакузи — возьмите тапочки и полотенце.",
+      name: "Свадьба Ильи и Дарины — праздник в загородном доме",
+      description: "Праздник в загородном доме. Будут баня и джакузи — не забудьте тапочки и полотенце.",
       startDate: "2026-09-26",
       startTime: "17:00",
       endDate: "2026-09-26",
@@ -110,7 +168,6 @@ const slides = [
   { id: "registry", label: "Роспись", chapter: "04", theme: "rose" },
   { id: "celebration", label: "Праздник", chapter: "05", theme: "rose" },
   { id: "date", label: "Дата", chapter: "06", theme: "dark" },
-  { id: "details", label: "Детали", chapter: "07", theme: "dark" },
   { id: "rsvp", label: "Ответ", chapter: "Финал", theme: "dark" },
 ];
 
@@ -436,15 +493,15 @@ function Intro({ goTo }) {
           Илья <span>&amp;</span><br />Дарина
         </motion.h1>
         <motion.p className="hero-lead" variants={reveal}>
-          История, в которой самая важная глава начинается вместе с вами.
+          Наша самая важная глава начинается — и мы хотим разделить её с вами.
         </motion.p>
         <motion.button className="primary-action" onClick={() => goTo(1)} variants={reveal} whileTap={{ scale: 0.96 }}>
-          узнать подробнее че за суета <span>↗</span>
+          Узнать, что за суета <span>↗</span>
         </motion.button>
       </div>
       <motion.div className="hero-portrait" variants={reveal}>
         <div className="hero-portrait__frame">
-          <img src={childhoodWeddingA} alt="Илья в костюме жениха и Дарина в образе невесты" />
+          <img src={heroWeddingPhoto} alt="Илья в костюме жениха и Дарина в образе невесты" />
         </div>
         <motion.div className="orbit-copy" animate={{ rotate: 360 }} transition={{ duration: 28, repeat: Infinity, ease: "linear" }}>
           <span>НАША ИСТОРИЯ • НАШ ДЕНЬ • НАШИ ЛЮДИ • </span>
@@ -487,7 +544,7 @@ function DreamReveal() {
           <motion.span className="dream-thought" variants={cardItem}>
             Интересно,<br />кто будет<br /><em>моей женой?</em>
           </motion.span>
-          <motion.span className="dream-scene__hint" variants={cardItem}>Нажми на карточку ↗</motion.span>
+          <motion.span className="dream-scene__hint" variants={cardItem}>Спойлер</motion.span>
         </motion.span>
       </button>
 
@@ -514,7 +571,7 @@ function DreamReveal() {
             transition={{ duration: 0.48, delay: isRevealed ? 0.36 : 0, ease: [0.16, 1, 0.3, 1] }}
           >
             <small>Спойлер из будущего</small>
-            <strong>Вот она.</strong>
+            <strong>И однажды ему приснилась эта хмурая девочка</strong>
           </motion.span>
           <motion.span
             className="dream-scene__hint"
@@ -535,8 +592,7 @@ function Grow() {
     <motion.div className="panel-layout story-layout" variants={stagger} initial="hidden" animate="show">
       <motion.div className="chapter-copy" variants={reveal}>
         <p className="eyebrow">Глава первая · когда мы были маленькими</p>
-        <h2>Сначала каждый<br />мечтал <em>о своём</em></h2>
-        <p>Мы ещё не знали друг друга, но жизнь уже тихо складывала нашу историю.</p>
+        <h2>Сначала он часто мечтал <em>во сне</em></h2>
       </motion.div>
       <div className="story-collage story-collage--dream">
         <motion.div className="dream-reveal" variants={cardSequence}>
@@ -551,14 +607,32 @@ function Together() {
   return (
     <motion.div className="panel-layout story-layout story-layout--reverse" variants={stagger} initial="hidden" animate="show">
       <div className="story-collage story-collage--together">
-        <Photo src={childPink} alt="Дарина в детстве" className="photo-child-pink" rotate={-7} />
-        <Photo src={childhoodWeddingA} alt="Детская свадьба" className="photo-little-wedding" rotate={6} delay={0.8} />
-        <motion.img className="collage-line" src={heartLineB} alt="" variants={reveal} />
+        <motion.svg className="story-heart-field" viewBox="0 0 600 520" variants={reveal} aria-hidden="true">
+          {storyHeartParticles.map(({ path, duration, phase, size }) => {
+            const x = phaseHeartPath(path.x, phase);
+            const y = phaseHeartPath(path.y, phase);
+            return (
+            <motion.text
+              className={`story-orbit-heart ${size}`.trim()}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              initial={{ x: x[0], y: y[0] }}
+              animate={{ x, y, rotate: [0, 12, 0, -12, 0, 12, 0, -12, 0] }}
+              transition={{ duration, repeat: Infinity, ease: "linear" }}
+              key={`${duration}-${phase}`}
+            >
+              ♥
+            </motion.text>
+            );
+          })}
+        </motion.svg>
+        <Photo src={storyArcherPhoto} alt="Дарина с луком" className="story-photo-card photo-story-archer" />
+        <Photo src={storyKeysPhoto} alt="Илья с ключами" className="story-photo-card photo-story-keys" delay={0.8} />
       </div>
       <motion.div className="chapter-copy" variants={reveal}>
         <p className="eyebrow">Глава вторая · тот самый поворот</p>
-        <h2>А потом<br />мы нашли <em>друг друга</em></h2>
-        <p>И оказалось, что самые важные мечты сбываются совсем не так, как их представляешь.</p>
+        <h2>А потом он вырос — и девочка появилась <em>не во сне, а наяву</em></h2>
+        <p>Она попала ему прямо в сердце, и он стал подбирать к нему ключик, пока остальные претенденты безнадёжно проигрывали.</p>
       </motion.div>
     </motion.div>
   );
@@ -570,11 +644,11 @@ function Invite({ guest }) {
       <motion.div className="invite-copy" variants={reveal}>
         <p className="eyebrow">Теперь официально</p>
         <h2>{guest.salutation},</h2>
-        <p className="invite-statement">мы скоро станем семьёй и хотим, чтобы вы были рядом в этот день.</p>
+        <p className="invite-statement">мы скоро станем семьёй — и очень хотим, чтобы в этот день вы были рядом.</p>
       </motion.div>
       <div className="invite-collage">
         <Photo src={friendsA} alt="Илья и Дарина" className="photo-couple-cutout" rotate={-2} />
-        <Photo src={weddingPolaroidA} alt="Детская свадебная фотография" className="photo-polaroid" rotate={6} delay={1.4} />
+        <Photo src={inviteRings} alt="Обручальные кольца" className="photo-polaroid photo-invite-rings" rotate={6} delay={1.4} />
       </div>
     </motion.div>
   );
@@ -585,7 +659,7 @@ function Registry() {
     <motion.div className="panel-layout event-layout" variants={stagger} initial="hidden" animate="show">
       <motion.div className="event-number" variants={reveal}>13:40</motion.div>
       <motion.article className="event-card" variants={cardSequence}>
-        <motion.p className="eyebrow" variants={cardItem}>Сначала — главное</motion.p>
+        <motion.p className="eyebrow" variants={cardItem}>Сначала — самое главное</motion.p>
         <motion.h2 variants={cardItem}>Церемония</motion.h2>
         <motion.p variants={cardItem}>{registryVenue.name}</motion.p>
         <motion.address variants={cardItem}>{registryVenue.address}</motion.address>
@@ -594,19 +668,42 @@ function Registry() {
         </motion.div>
         <motion.div className="event-meta" variants={cardItem}><span>Пятница</span><span>25 сентября</span></motion.div>
       </motion.article>
-      <Photo src={childhoodWeddingB} alt="Детская свадебная фотография" className="photo-registry" rotate={7} />
+      <Photo src={registryKids} alt="Мальчик и девочка в свадебных нарядах" className="photo-registry" rotate={7} />
     </motion.div>
   );
 }
 
 function Celebration() {
+  const reducedMotion = useReducedMotion();
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [isPhotoDragging, setIsPhotoDragging] = useState(false);
+
+  useEffect(() => {
+    if (reducedMotion || isPhotoDragging) return undefined;
+    const timer = window.setTimeout(() => {
+      setPhotoIndex((current) => (current + 1) % celebrationPhotos.length);
+    }, 2800);
+    return () => window.clearTimeout(timer);
+  }, [isPhotoDragging, photoIndex, reducedMotion]);
+
+  const selectPhoto = (index) => {
+    setPhotoIndex((index + celebrationPhotos.length) % celebrationPhotos.length);
+  };
+  const finishPhotoDrag = (_, info) => {
+    setIsPhotoDragging(false);
+    const gesture = Math.abs(info.offset.x) > 5 ? info.offset.x : info.velocity.x;
+    const isSwipe = Math.abs(info.offset.x) > 22 || Math.abs(info.velocity.x) > 180;
+    if (isSwipe) selectPhoto(photoIndex + (gesture < 0 ? 1 : -1));
+  };
+  const activePhoto = celebrationPhotos[photoIndex];
+
   return (
     <motion.div className="panel-layout celebration-layout" variants={stagger} initial="hidden" animate="show">
       <motion.div className="celebration-copy" variants={celebrationSequence}>
         <motion.div className="celebration-intro" variants={celebrationItem}>
-          <p className="eyebrow">А после — самое живое</p>
-          <h2>Праздник<br /><em>на природе</em></h2>
-          <p>Дом, тёплый вечер и люди, которых мы действительно хотим видеть рядом.</p>
+          <p className="eyebrow">А после — самое весёлое</p>
+          <h2>Праздник<br /><em>в домике</em></h2>
+          <p>Уютный дом, тёплый вечер и только те, кого мы действительно хотим видеть рядом.</p>
         </motion.div>
         <div className="celebration-venue">
           <motion.div className="celebration-venue__address" variants={celebrationItem}>
@@ -618,20 +715,63 @@ function Celebration() {
           </motion.div>
           <motion.p className="parking-note" variants={celebrationItem}>
             <i aria-hidden="true">P</i>
-            <span><strong>Парковка</strong> На внедорожнике можно припарковаться возле дома, на легковой машине — возле памятника.</span>
+            <span><strong>Парковка</strong> Внедорожник можно оставить возле дома, легковую машину — возле памятника.</span>
           </motion.p>
           <motion.p className="parking-note parking-note--extra" variants={celebrationItem}>
             <i aria-hidden="true">♨</i>
-            <span><strong>Баня и джакузи</strong> Будут доступны во время праздника.</span>
+            <span><strong>Баня и джакузи</strong> Будут доступны в течение всего вечера.</span>
           </motion.p>
           <motion.p className="parking-note parking-note--extra" variants={celebrationItem}>
             <i aria-hidden="true">✓</i>
-            <span><strong>Возьмите с собой</strong> Тапочки и полотенце.</span>
+            <span><strong>Возьмите с собой</strong> Не забудьте тапочки и полотенце.</span>
           </motion.p>
+          <motion.div className="celebration-meta" variants={celebrationItem}>
+            <span>Суббота</span><span>26 сентября</span>
+          </motion.div>
         </div>
       </motion.div>
-      <Photo src={friendsB} alt="Илья и Дарина" className="photo-celebration" rotate={-3} />
-      <motion.img className="celebration-heart" src={heart} alt="" variants={reveal} />
+      <motion.div className="celebration-gallery" variants={reveal}>
+        <div className="celebration-gallery__frame">
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.figure
+              key={activePhoto.src}
+              initial={reducedMotion ? false : { opacity: 0, scale: 1.035 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.985 }}
+              transition={{ duration: reducedMotion ? 0.01 : 0.7, ease: [0.16, 1, 0.3, 1] }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.35}
+              dragMomentum={false}
+              dragSnapToOrigin
+              onDragStart={() => setIsPhotoDragging(true)}
+              onDragEnd={finishPhotoDrag}
+            >
+              <img src={activePhoto.src} alt={activePhoto.alt} />
+              <figcaption>
+                <span>{String(photoIndex + 1).padStart(2, "0")}</span>
+                <strong>{activePhoto.label}</strong>
+              </figcaption>
+            </motion.figure>
+          </AnimatePresence>
+        </div>
+        <div className="celebration-gallery__controls" aria-label="Фотографии места праздника">
+          <button type="button" onClick={() => selectPhoto(photoIndex - 1)} aria-label="Предыдущая фотография">←</button>
+          <div>
+            {celebrationPhotos.map((photo, index) => (
+              <button
+                type="button"
+                className={index === photoIndex ? "is-active" : ""}
+                onClick={() => selectPhoto(index)}
+                aria-label={`Показать: ${photo.label}`}
+                aria-current={index === photoIndex ? "true" : undefined}
+                key={photo.src}
+              />
+            ))}
+          </div>
+          <button type="button" onClick={() => selectPhoto(photoIndex + 1)} aria-label="Следующая фотография">→</button>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -729,7 +869,7 @@ function DateSlide() {
       <motion.div className="date-heading" variants={reveal}>
         <p className="eyebrow">Два дня · одна история</p>
         <h2>Сохраните<br /><em>две даты</em></h2>
-        <p>Нажмите на нужный день — событие откроется в календаре вашего телефона.</p>
+        <p>Выберите нужный день — мы подскажем, как добавить событие в календарь.</p>
       </motion.div>
       <div className="date-events">
         {weddingCalendarEvents.map((event) => (
@@ -743,48 +883,32 @@ function DateSlide() {
   );
 }
 
-function Details() {
-  return (
-    <motion.div className="panel-layout details-layout" variants={stagger} initial="hidden" animate="show">
-      <motion.div className="details-heading" variants={reveal}>
-        <p className="eyebrow">Почему именно так</p>
-        <h2>Без лишнего.<br /><em>По-настоящему.</em></h2>
-      </motion.div>
-      <motion.div className="details-card" variants={cardSequence}>
-        <motion.span variants={cardItem}>01</motion.span>
-        <motion.p variants={cardItem}>Для нас важен этот день, поэтому мы проведём его не в ресторане, а на природе.</motion.p>
-      </motion.div>
-      <motion.div className="details-card details-card--second" variants={cardSequence}>
-        <motion.span variants={cardItem}>02</motion.span>
-        <motion.p variants={cardItem}>Хотим прожить с вами искренний активный вечер, который вместе напишем словно сериал.</motion.p>
-      </motion.div>
-      <Photo src={childPink} alt="Дарина в детстве" className="photo-details" rotate={8} />
-    </motion.div>
-  );
-}
-
-function Rsvp({ guest, accepted, onRespond }) {
+function Rsvp({ guest }) {
   return (
     <motion.div className="panel-layout rsvp-layout" variants={stagger} initial="hidden" animate="show">
       <motion.p className="eyebrow" variants={reveal}>Последний, но важный вопрос</motion.p>
-      <motion.h2 variants={reveal}>{accepted ? "До встречи!" : "Вы будете с нами?"}</motion.h2>
+      <motion.h2 variants={reveal}>Будете с нами?</motion.h2>
       <motion.p className="rsvp-lead" variants={reveal}>
-        {accepted
-          ? `${guest.name}, ваш ответ сохранён. Очень ждём вас 25 и 26 сентября.`
-          : `${guest.salutation}, дайте нам знать, сможете ли вы разделить этот день с нами.`}
+        {guest.salutation}, присоединяйтесь к нашей группе — там будут новости, напоминания и все детали праздника.
       </motion.p>
-      {!accepted && (
-        <motion.button className="primary-action primary-action--light" onClick={onRespond} variants={reveal} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}>
-          Да, я буду <span>♥</span>
-        </motion.button>
-      )}
+      <motion.a
+        className="primary-action primary-action--light"
+        href={telegramInviteUrl}
+        target="_blank"
+        rel="noreferrer"
+        variants={reveal}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.96 }}
+      >
+        Я за суету <span>↗</span>
+      </motion.a>
       <motion.img className="rsvp-line" src={heartLineA} alt="" variants={reveal} />
       <motion.div className="rsvp-signature" variants={reveal}>Илья &amp; Дарина</motion.div>
     </motion.div>
   );
 }
 
-function SlideContent({ id, guest, accepted, onRespond, goTo }) {
+function SlideContent({ id, guest, goTo }) {
   if (id === "welcome") return <Intro goTo={goTo} />;
   if (id === "grow") return <Grow />;
   if (id === "together") return <Together />;
@@ -792,8 +916,7 @@ function SlideContent({ id, guest, accepted, onRespond, goTo }) {
   if (id === "registry") return <Registry />;
   if (id === "celebration") return <Celebration />;
   if (id === "date") return <DateSlide />;
-  if (id === "details") return <Details />;
-  return <Rsvp guest={guest} accepted={accepted} onRespond={onRespond} />;
+  return <Rsvp guest={guest} />;
 }
 
 export default function App() {
@@ -804,7 +927,6 @@ export default function App() {
   const initialIndex = useMemo(getInitialIndex, []);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(1);
-  const [accepted, setAccepted] = useState(false);
   const activeIndexRef = useRef(initialIndex);
   const lockedRef = useRef(false);
   const touchStartRef = useRef(null);
@@ -869,15 +991,6 @@ export default function App() {
 
   useEffect(() => () => window.clearTimeout(transitionTimerRef.current), []);
 
-  const respond = () => {
-    setAccepted(true);
-    if (!rsvpFormUrl) return;
-    const url = rsvpFormUrl
-      .replace("{id}", encodeURIComponent(guest.id || "unknown"))
-      .replace("{guest}", encodeURIComponent(guest.name));
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-
   return (
     <MotionConfig reducedMotion="user">
     <main className={`story story--${activeSlide.theme}`} aria-busy={!isReady}>
@@ -909,8 +1022,6 @@ export default function App() {
           <SlideContent
             id={activeSlide.id}
             guest={guest}
-            accepted={accepted}
-            onRespond={respond}
             goTo={goTo}
           />
         </motion.section>}
