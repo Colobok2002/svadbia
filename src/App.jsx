@@ -1265,15 +1265,15 @@ function Rsvp({ guest }) {
   const reducedMotion = useReducedMotion();
   const [celebrating, setCelebrating] = useState(false);
   const [countdown, setCountdown] = useState(null);
-  const [needsManualOpen, setNeedsManualOpen] = useState(false);
   const celebrationTimerRef = useRef();
   const countdownTimerRef = useRef();
 
   const celebrateAndJoin = (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (needsManualOpen) return;
-    event.preventDefault();
-    if (celebrating) return;
+    if (celebrating) {
+      event.preventDefault();
+      return;
+    }
 
     setCelebrating(true);
     setCountdown(3);
@@ -1287,9 +1287,6 @@ function Rsvp({ guest }) {
     countdownTimerRef.current = window.setInterval(tick, 1200);
     celebrationTimerRef.current = window.setTimeout(() => {
       window.clearInterval(countdownTimerRef.current);
-      const targetWindow = window.open(telegramInviteUrl, "_blank");
-      if (targetWindow) targetWindow.opener = null;
-      else setNeedsManualOpen(true);
       setCelebrating(false);
       setCountdown(null);
     }, 3800);
@@ -1320,7 +1317,7 @@ function Rsvp({ guest }) {
       >
         {celebrating
           ? countdown > 0 ? `Направляем вас куда нужно через ${countdown}…` : "Открываем Telegram…"
-          : needsManualOpen ? "Открыть Telegram" : "Я за суету"} <span>{celebrating ? "♥" : "↗"}</span>
+          : "Я за суету"} <span>{celebrating ? "♥" : "↗"}</span>
       </motion.a>
       <motion.img className="rsvp-line" src={heartLineA} alt="" variants={reveal} />
       <motion.div className="rsvp-signature" variants={reveal}>Илья &amp; Дарина</motion.div>
