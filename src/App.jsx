@@ -1,5 +1,13 @@
-import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AnimatePresence,
+  MotionConfig,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from "motion/react";
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import ReactCardFlipModule from "react-card-flip";
 import { createPortal } from "react-dom";
 import PearlFilmBackdrop from "./components/PearlFilmBackdrop/PearlFilmBackdrop";
@@ -95,6 +103,51 @@ const storyHeartParticles = [
   { path: middleHeartPath, duration: 7.5, phase: 2, size: "is-small" },
   { path: middleHeartPath, duration: 7.5, phase: 6, size: "" },
 ];
+
+const inviteSparkles = [
+  { x: "8%", y: "18%", delay: 0.1, size: "is-large" },
+  { x: "39%", y: "4%", delay: 1.35, size: "" },
+  { x: "46%", y: "41%", delay: 2.25, size: "is-small" },
+];
+
+const easterEggParticles = Array.from({ length: 18 }, (_, index) => {
+  const angle = (Math.PI * 2 * index) / 18;
+  const distance = 70 + (index % 4) * 22;
+  return {
+    x: Math.cos(angle) * distance,
+    y: Math.sin(angle) * distance,
+    rotate: 120 + index * 47,
+    symbol: index % 5 === 0 ? "♥" : index % 3 === 0 ? "✦" : "•",
+  };
+});
+
+const celebrationConfetti = Array.from({ length: 34 }, (_, index) => {
+  const angle = (Math.PI * 2 * index) / 34;
+  const distance = 150 + (index % 6) * 38;
+  return {
+    x: Math.cos(angle) * distance,
+    y: Math.sin(angle) * distance - 70,
+    rotate: 180 + index * 73,
+    symbol: index % 7 === 0 ? "♥" : index % 4 === 0 ? "✦" : "•",
+    delay: (index % 5) * 0.018,
+  };
+});
+
+const saluteParticles = [
+  { left: "24%", top: "30%", delay: 0 },
+  { left: "76%", top: "27%", delay: 0.72 },
+  { left: "52%", top: "20%", delay: 1.44 },
+].flatMap((burst, burstIndex) => Array.from({ length: 14 }, (_, index) => {
+  const angle = (Math.PI * 2 * index) / 14;
+  const distance = 58 + (index % 3) * 20;
+  return {
+    ...burst,
+    x: Math.cos(angle) * distance,
+    y: Math.sin(angle) * distance,
+    rotate: index * 61 + burstIndex * 25,
+    symbol: index % 4 === 0 ? "✦" : "•",
+  };
+}));
 
 function phaseHeartPath(values, phase) {
   const loop = values.slice(0, -1);
@@ -221,6 +274,31 @@ const stagger = {
 const reveal = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.74, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const textSequence = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.13, delayChildren: 0.05 } },
+};
+
+const textLineReveal = {
+  hidden: { opacity: 0, x: -20 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.62, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const headingWordSequence = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.075, delayChildren: 0.04 } },
+};
+
+const headingWordReveal = {
+  hidden: { clipPath: "inset(-22% 100% -24% -12%)", opacity: 0.2, x: -10 },
+  show: {
+    opacity: 1,
+    x: 0,
+    clipPath: "inset(-22% -12% -24% -12%)",
+    transition: { duration: 0.72, ease: [0.16, 1, 0.3, 1] },
+  },
 };
 
 const inviteCarReveal = {
@@ -422,6 +500,138 @@ function LoadingScreen({ progress }) {
   );
 }
 
+function scheduleWeddingPhrase(context, output) {
+  const notes = [261.63, 329.63, 392, 493.88, 440, 392, 329.63, 293.66];
+  const startedAt = context.currentTime + 0.04;
+
+  notes.forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const overtone = context.createOscillator();
+    const envelope = context.createGain();
+    const overtoneGain = context.createGain();
+    const noteStart = startedAt + index * 0.48;
+    const noteEnd = noteStart + 1.55;
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, noteStart);
+    overtone.type = "triangle";
+    overtone.frequency.setValueAtTime(frequency * 2, noteStart);
+    overtoneGain.gain.setValueAtTime(0.12, noteStart);
+    envelope.gain.setValueAtTime(0.0001, noteStart);
+    envelope.gain.exponentialRampToValueAtTime(0.075, noteStart + 0.055);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
+
+    oscillator.connect(envelope);
+    overtone.connect(overtoneGain).connect(envelope);
+    envelope.connect(output);
+    oscillator.start(noteStart);
+    overtone.start(noteStart);
+    oscillator.stop(noteEnd);
+    overtone.stop(noteEnd);
+  });
+}
+
+function MusicToggle() {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef(null);
+  const phraseTimerRef = useRef();
+  const closeTimerRef = useRef();
+
+  const stopMusic = () => {
+    window.clearInterval(phraseTimerRef.current);
+    window.clearTimeout(closeTimerRef.current);
+    const audio = audioRef.current;
+    audioRef.current = null;
+    setPlaying(false);
+    if (!audio) return;
+
+    const now = audio.context.currentTime;
+    audio.master.gain.cancelScheduledValues(now);
+    audio.master.gain.setValueAtTime(Math.max(audio.master.gain.value, 0.0001), now);
+    audio.master.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    closeTimerRef.current = window.setTimeout(() => void audio.context.close(), 220);
+  };
+
+  const startMusic = async () => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    window.clearTimeout(closeTimerRef.current);
+
+    const context = new AudioContextClass();
+    const master = context.createGain();
+    master.gain.setValueAtTime(0.0001, context.currentTime);
+    master.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.5);
+    master.connect(context.destination);
+    audioRef.current = { context, master };
+
+    try {
+      await context.resume();
+      scheduleWeddingPhrase(context, master);
+      phraseTimerRef.current = window.setInterval(() => scheduleWeddingPhrase(context, master), 6100);
+      setPlaying(true);
+    } catch {
+      void context.close();
+      audioRef.current = null;
+    }
+  };
+
+  const toggleMusic = () => {
+    if (playing) stopMusic();
+    else void startMusic();
+  };
+
+  useEffect(() => () => {
+    window.clearInterval(phraseTimerRef.current);
+    window.clearTimeout(closeTimerRef.current);
+    if (audioRef.current) void audioRef.current.context.close();
+  }, []);
+
+  return (
+    <button
+      type="button"
+      className={`music-toggle${playing ? " is-playing" : ""}`}
+      onClick={toggleMusic}
+      aria-label={playing ? "Выключить фоновую музыку" : "Включить фоновую музыку"}
+      aria-pressed={playing}
+      title={playing ? "Выключить музыку" : "Включить музыку"}
+    >
+      <span aria-hidden="true">♫</span>
+      <i aria-hidden="true" />
+    </button>
+  );
+}
+
+function MonogramSurprise() {
+  return (
+    <motion.div
+      className="monogram-surprise"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      aria-live="polite"
+    >
+      <motion.strong
+        initial={{ opacity: 0, y: -7, scale: 0.85 }}
+        animate={{ opacity: [0, 1, 1, 0], y: [-7, 0, 0, -5], scale: [0.85, 1, 1, 0.96] }}
+        transition={{ duration: 2.35, times: [0, 0.16, 0.78, 1], ease: "easeOut" }}
+      >
+        Суетологи на связи!
+      </motion.strong>
+      {easterEggParticles.map((particle, index) => (
+        <motion.i
+          initial={{ opacity: 0, x: 0, y: 0, scale: 0.25, rotate: 0 }}
+          animate={{ opacity: [0, 1, 0], x: particle.x, y: particle.y, scale: [0.25, 1, 0.35], rotate: particle.rotate }}
+          transition={{ duration: 1.4, delay: (index % 4) * 0.025, ease: [0.2, 0.75, 0.25, 1] }}
+          aria-hidden="true"
+          key={`${particle.x}-${particle.y}`}
+        >
+          {particle.symbol}
+        </motion.i>
+      ))}
+    </motion.div>
+  );
+}
+
 function getGuest() {
   const hash = window.location.hash.slice(1);
   const hashParams = new URLSearchParams(hash);
@@ -438,6 +648,55 @@ function getInitialIndex() {
   const hash = window.location.hash.slice(1);
   const index = slides.findIndex(({ id }) => id === hash);
   return index < 0 ? 0 : index;
+}
+
+function getHeadingText(node) {
+  return Children.toArray(node).map((child) => {
+    if (typeof child === "string" || typeof child === "number") return String(child);
+    if (!isValidElement(child)) return "";
+    if (child.type === "br") return " ";
+    return getHeadingText(child.props.children);
+  }).join("").replace(/\s+/g, " ").trim();
+}
+
+function animateHeadingNode(node, indexRef, keyPath = "heading") {
+  return Children.toArray(node).map((child, childIndex) => {
+    const childKey = `${keyPath}-${childIndex}`;
+    if (typeof child === "string" || typeof child === "number") {
+      return String(child).split(/(\s+)/).map((part, partIndex) => {
+        if (!part || /^\s+$/.test(part)) return part;
+        const wordIndex = indexRef.current;
+        indexRef.current += 1;
+        return (
+          <motion.span
+            className="masked-heading__word"
+            variants={headingWordReveal}
+            key={`${childKey}-word-${partIndex}-${wordIndex}`}
+          >
+            {part}
+          </motion.span>
+        );
+      });
+    }
+    if (!isValidElement(child)) return child;
+    if (child.type === "br") return cloneElement(child, { key: childKey });
+    return cloneElement(
+      child,
+      { key: childKey },
+      animateHeadingNode(child.props.children, indexRef, childKey),
+    );
+  });
+}
+
+function AnimatedHeading({ children, className = "" }) {
+  const indexRef = { current: 0 };
+  return (
+    <motion.h2 className={`masked-heading ${className}`.trim()} variants={headingWordSequence} aria-label={getHeadingText(children)}>
+      <span className="masked-heading__visual" aria-hidden="true">
+        {animateHeadingNode(children, indexRef)}
+      </span>
+    </motion.h2>
+  );
 }
 
 function Photo({ src, alt, className = "", rotate = 0, delay = 0, motionPreset = "float" }) {
@@ -532,7 +791,33 @@ function Intro({ goTo }) {
       <div className="hero-copy">
         <motion.p className="eyebrow" variants={reveal}>Свадебное приглашение · 25–26.09.2026</motion.p>
         <motion.h1 className="hero-title" variants={reveal}>
-          Илья <span>&amp;</span><br />Дарина
+          <motion.span
+            className="hero-title__name"
+            variants={{
+              hidden: { clipPath: "inset(0 100% 0 0)", opacity: 0.2, x: -10 },
+              show: { clipPath: "inset(0 0% 0 0)", opacity: 1, x: 0, transition: { duration: 0.95, delay: 0.08, ease: [0.16, 1, 0.3, 1] } },
+            }}
+          >
+            Илья
+          </motion.span>{" "}
+          <motion.span
+            className="hero-title__ampersand"
+            initial={{ opacity: 0, scale: 0.55, rotate: -18 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 0.7, delay: 0.58, type: "spring", stiffness: 150, damping: 14 }}
+          >
+            &amp;
+          </motion.span>
+          <br />
+          <motion.span
+            className="hero-title__name"
+            variants={{
+              hidden: { clipPath: "inset(0 100% 0 0)", opacity: 0.2, x: -10 },
+              show: { clipPath: "inset(0 0% 0 0)", opacity: 1, x: 0, transition: { duration: 1.05, delay: 0.34, ease: [0.16, 1, 0.3, 1] } },
+            }}
+          >
+            Дарина
+          </motion.span>
         </motion.h1>
         <motion.p className="hero-lead" variants={reveal}>
           Наша самая важная глава начинается — и мы хотим разделить её с вами.
@@ -632,9 +917,9 @@ function DreamReveal() {
 function Grow() {
   return (
     <motion.div className="panel-layout story-layout" variants={stagger} initial="hidden" animate="show">
-      <motion.div className="chapter-copy" variants={reveal}>
-        <p className="eyebrow">Глава первая · когда мы были маленькими</p>
-        <h2>Сначала он часто мечтал <em>во сне</em></h2>
+      <motion.div className="chapter-copy" variants={textSequence}>
+        <motion.p className="eyebrow" variants={textLineReveal}>Глава первая · когда мы были маленькими</motion.p>
+        <AnimatedHeading>Сначала он часто мечтал <em>во сне</em></AnimatedHeading>
       </motion.div>
       <div className="story-collage story-collage--dream">
         <motion.div className="dream-reveal" variants={cardSequence}>
@@ -671,27 +956,78 @@ function Together() {
         <Photo src={storyArcherPhoto} alt="Дарина с луком" className="story-photo-card photo-story-archer" />
         <Photo src={storyKeysPhoto} alt="Илья с ключами" className="story-photo-card photo-story-keys" delay={0.8} />
       </div>
-      <motion.div className="chapter-copy" variants={reveal}>
-        <p className="eyebrow">Глава вторая · тот самый поворот</p>
-        <h2>А потом он вырос — и девочка появилась <em>не во сне, а наяву</em></h2>
-        <p>Она попала ему прямо в сердце, и он стал подбирать к нему ключик, пока остальные претенденты безнадёжно проигрывали.</p>
+      <motion.div className="chapter-copy" variants={textSequence}>
+        <motion.p className="eyebrow" variants={textLineReveal}>Глава вторая · тот самый поворот</motion.p>
+        <AnimatedHeading>А потом он вырос — и девочка появилась <em>не во сне, а наяву</em></AnimatedHeading>
+        <motion.p variants={textLineReveal}>Она попала ему прямо в сердце, и он стал подбирать к нему ключик, пока остальные претенденты безнадёжно проигрывали.</motion.p>
       </motion.div>
     </motion.div>
   );
 }
 
 function Invite({ guest }) {
+  const reducedMotion = useReducedMotion();
+  const parallaxX = useMotionValue(0);
+  const parallaxY = useMotionValue(0);
+  const smoothX = useSpring(parallaxX, { stiffness: 85, damping: 18, mass: 0.7 });
+  const smoothY = useSpring(parallaxY, { stiffness: 85, damping: 18, mass: 0.7 });
+  const rotateY = useTransform(smoothX, [-12, 12], [-1.8, 1.8]);
+  const rotateX = useTransform(smoothY, [-9, 9], [1.4, -1.4]);
+
+  useEffect(() => {
+    if (reducedMotion) return undefined;
+    const handleOrientation = (event) => {
+      if (event.gamma == null || event.beta == null) return;
+      parallaxX.set(Math.max(-10, Math.min(10, event.gamma * 0.28)));
+      parallaxY.set(Math.max(-7, Math.min(7, (event.beta - 45) * 0.12)));
+    };
+    window.addEventListener("deviceorientation", handleOrientation, { passive: true });
+    return () => window.removeEventListener("deviceorientation", handleOrientation);
+  }, [parallaxX, parallaxY, reducedMotion]);
+
+  const moveParallax = (event) => {
+    if (reducedMotion) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    parallaxX.set(((event.clientX - bounds.left) / bounds.width - 0.5) * 20);
+    parallaxY.set(((event.clientY - bounds.top) / bounds.height - 0.5) * 14);
+  };
+
+  const resetParallax = () => {
+    parallaxX.set(0);
+    parallaxY.set(0);
+  };
+
   return (
     <motion.div className="panel-layout invite-layout" variants={stagger} initial="hidden" animate="show">
-      <motion.div className="invite-copy" variants={reveal}>
-        <p className="eyebrow">Теперь официально</p>
-        <h2>{guest.salutation},</h2>
-        <p className="invite-statement">мы скоро станем семьёй — и очень хотим, чтобы в эти дни вы были рядом.</p>
+      <motion.div className="invite-copy" variants={textSequence}>
+        <motion.p className="eyebrow" variants={textLineReveal}>Теперь официально</motion.p>
+        <AnimatedHeading>{guest.salutation},</AnimatedHeading>
+        <motion.p className="invite-statement" variants={textLineReveal}>мы скоро станем семьёй — и очень хотим, чтобы в эти дни вы были рядом.</motion.p>
       </motion.div>
-      <div className="invite-collage">
+      <motion.div
+        className="invite-collage"
+        style={{ x: smoothX, y: smoothY, rotateX, rotateY, transformPerspective: 900 }}
+        onPointerMove={moveParallax}
+        onPointerLeave={resetParallax}
+        onPointerCancel={resetParallax}
+        onPointerUp={resetParallax}
+      >
         <Photo src={inviteCar} alt="Свадебная машина семьи Суетологов" className="photo-invite-car" rotate={-1} motionPreset="car" />
         <Photo src={inviteRings} alt="Обручальные кольца" className="photo-invite-rings" rotate={5} motionPreset="rings" />
-      </div>
+        {!reducedMotion && inviteSparkles.map((sparkle) => (
+          <motion.i
+            className={`invite-rings-spark ${sparkle.size}`}
+            style={{ top: sparkle.y, right: sparkle.x }}
+            initial={{ opacity: 0, scale: 0, rotate: -25 }}
+            animate={{ opacity: [0, 1, 0], scale: [0.25, 1.15, 0.2], rotate: [-25, 20, 55] }}
+            transition={{ duration: 1.35, delay: sparkle.delay, repeat: Infinity, repeatDelay: 2.15, ease: "easeInOut" }}
+            aria-hidden="true"
+            key={`${sparkle.x}-${sparkle.y}`}
+          >
+            ✦
+          </motion.i>
+        ))}
+      </motion.div>
     </motion.div>
   );
 }
@@ -702,7 +1038,7 @@ function Registry() {
       <motion.div className="event-number" variants={reveal}>13:40</motion.div>
       <motion.article className="event-card" variants={cardSequence}>
         <motion.p className="eyebrow" variants={cardItem}>Сначала — самое главное</motion.p>
-        <motion.h2 variants={cardItem}>Церемония</motion.h2>
+        <AnimatedHeading>Церемония</AnimatedHeading>
         <motion.p variants={cardItem}>{registryVenue.name}</motion.p>
         <motion.address variants={cardItem}>{registryVenue.address}</motion.address>
         <motion.div className="event-card__route" variants={cardItem}>
@@ -742,10 +1078,10 @@ function Celebration() {
   return (
     <motion.div className="panel-layout celebration-layout" variants={stagger} initial="hidden" animate="show">
       <motion.div className="celebration-copy" variants={celebrationSequence}>
-        <motion.div className="celebration-intro" variants={celebrationItem}>
-          <p className="eyebrow">А после — самое весёлое</p>
-          <h2>Праздник<br /><em>в домике</em></h2>
-          <p>Уютный дом, тёплый вечер и только те, кого мы действительно хотим видеть рядом.</p>
+        <motion.div className="celebration-intro" variants={textSequence}>
+          <motion.p className="eyebrow" variants={textLineReveal}>А после — самое весёлое</motion.p>
+          <AnimatedHeading>Праздник<br /><em>в домике</em></AnimatedHeading>
+          <motion.p variants={textLineReveal}>Уютный дом, тёплый вечер и только те, кого мы действительно хотим видеть рядом.</motion.p>
         </motion.div>
         <div className="celebration-venue">
           <motion.div className="celebration-venue__address" variants={celebrationItem}>
@@ -908,10 +1244,10 @@ function DateSlide() {
 
   return (
     <motion.div className="panel-layout date-layout" variants={stagger} initial="hidden" animate="show">
-      <motion.div className="date-heading" variants={reveal}>
-        <p className="eyebrow">Два дня · одна история</p>
-        <h2>Сохраните<br /><em>две даты</em></h2>
-        <p>Выберите нужный день — мы подскажем, как добавить событие в календарь.</p>
+      <motion.div className="date-heading" variants={textSequence}>
+        <motion.p className="eyebrow" variants={textLineReveal}>Два дня · одна история</motion.p>
+        <AnimatedHeading>Сохраните<br /><em>две даты</em></AnimatedHeading>
+        <motion.p variants={textLineReveal}>Выберите нужный день — мы подскажем, как добавить событие в календарь.</motion.p>
       </motion.div>
       <div className="date-events">
         {weddingCalendarEvents.map((event) => (
@@ -926,26 +1262,96 @@ function DateSlide() {
 }
 
 function Rsvp({ guest }) {
+  const reducedMotion = useReducedMotion();
+  const [celebrating, setCelebrating] = useState(false);
+  const [countdown, setCountdown] = useState(null);
+  const [needsManualOpen, setNeedsManualOpen] = useState(false);
+  const celebrationTimerRef = useRef();
+  const countdownTimerRef = useRef();
+
+  const celebrateAndJoin = (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (needsManualOpen) return;
+    event.preventDefault();
+    if (celebrating) return;
+
+    setCelebrating(true);
+    setCountdown(3);
+
+    let remaining = 3;
+    const tick = () => {
+      remaining -= 1;
+      setCountdown(remaining);
+    };
+
+    countdownTimerRef.current = window.setInterval(tick, 1200);
+    celebrationTimerRef.current = window.setTimeout(() => {
+      window.clearInterval(countdownTimerRef.current);
+      const targetWindow = window.open(telegramInviteUrl, "_blank");
+      if (targetWindow) targetWindow.opener = null;
+      else setNeedsManualOpen(true);
+      setCelebrating(false);
+      setCountdown(null);
+    }, 3800);
+  };
+
+  useEffect(() => () => {
+    window.clearTimeout(celebrationTimerRef.current);
+    window.clearInterval(countdownTimerRef.current);
+  }, []);
+
   return (
-    <motion.div className="panel-layout rsvp-layout" variants={stagger} initial="hidden" animate="show">
-      <motion.p className="eyebrow" variants={reveal}>Последний, но важный вопрос</motion.p>
-      <motion.h2 variants={reveal}>Будете с нами?</motion.h2>
-      <motion.p className="rsvp-lead" variants={reveal}>
+    <motion.div className="panel-layout rsvp-layout" variants={textSequence} initial="hidden" animate="show">
+      <motion.p className="eyebrow" variants={textLineReveal}>Последний, но важный вопрос</motion.p>
+      <AnimatedHeading>Будете с нами?</AnimatedHeading>
+      <motion.p className="rsvp-lead" variants={textLineReveal}>
         {guest.salutation}, присоединяйтесь к нашей группе — там будут новости, напоминания и все детали праздника.
       </motion.p>
       <motion.a
-        className="primary-action primary-action--light"
+        className={`primary-action primary-action--light${celebrating ? " is-celebrating" : ""}`}
         href={telegramInviteUrl}
         target="_blank"
         rel="noreferrer"
+        onClick={celebrateAndJoin}
         variants={reveal}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.96 }}
+        aria-live="polite"
       >
-        Я за суету <span>↗</span>
+        {celebrating
+          ? countdown > 0 ? `Направляем вас куда нужно через ${countdown}…` : "Открываем Telegram…"
+          : needsManualOpen ? "Открыть Telegram" : "Я за суету"} <span>{celebrating ? "♥" : "↗"}</span>
       </motion.a>
       <motion.img className="rsvp-line" src={heartLineA} alt="" variants={reveal} />
       <motion.div className="rsvp-signature" variants={reveal}>Илья &amp; Дарина</motion.div>
+      <AnimatePresence>
+        {celebrating && !reducedMotion && (
+          <motion.div className="rsvp-celebration" initial={{ opacity: 1 }} exit={{ opacity: 0 }} aria-hidden="true">
+            {celebrationConfetti.map((piece, index) => (
+              <motion.i
+                initial={{ opacity: 0, x: 0, y: 0, scale: 0.2, rotate: 0 }}
+                animate={{ opacity: [0, 1, 1, 0], x: piece.x, y: piece.y, scale: [0.2, 1, 0.75, 0.25], rotate: piece.rotate }}
+                transition={{ duration: 3.15, delay: piece.delay, ease: [0.18, 0.78, 0.22, 1] }}
+                key={`${piece.x}-${piece.y}`}
+              >
+                {piece.symbol}
+              </motion.i>
+            ))}
+            {saluteParticles.map((particle, index) => (
+              <motion.b
+                className="rsvp-salute-particle"
+                style={{ left: particle.left, top: particle.top }}
+                initial={{ opacity: 0, x: 0, y: 0, scale: 0.15, rotate: 0 }}
+                animate={{ opacity: [0, 1, 0], x: particle.x, y: particle.y, scale: [0.15, 1.1, 0.3], rotate: particle.rotate }}
+                transition={{ duration: 1.5, delay: particle.delay + (index % 3) * 0.018, ease: [0.16, 0.76, 0.24, 1] }}
+                key={`${particle.left}-${particle.top}-${index}`}
+              >
+                {particle.symbol}
+              </motion.b>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -969,8 +1375,11 @@ export default function App() {
   const initialIndex = useMemo(getInitialIndex, []);
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(1);
+  const [showMonogramSurprise, setShowMonogramSurprise] = useState(false);
   const activeIndexRef = useRef(initialIndex);
   const lockedRef = useRef(false);
+  const monogramTapRef = useRef({ count: 0, lastTap: 0 });
+  const monogramTimerRef = useRef();
   const touchStartRef = useRef(null);
   const transitionTimerRef = useRef();
   const activeSlide = slides[activeIndex];
@@ -995,6 +1404,20 @@ export default function App() {
     transitionTimerRef.current = window.setTimeout(() => {
       lockedRef.current = false;
     }, reducedMotion ? 80 : mobile ? 720 : 980);
+  };
+
+  const handleMonogramClick = () => {
+    goTo(0);
+    const now = Date.now();
+    const previous = monogramTapRef.current;
+    const count = now - previous.lastTap < 850 ? previous.count + 1 : 1;
+    monogramTapRef.current = { count, lastTap: now };
+
+    if (count < 5) return;
+    monogramTapRef.current = { count: 0, lastTap: 0 };
+    window.clearTimeout(monogramTimerRef.current);
+    setShowMonogramSurprise(true);
+    monogramTimerRef.current = window.setTimeout(() => setShowMonogramSurprise(false), 2450);
   };
 
   useEffect(() => {
@@ -1031,7 +1454,10 @@ export default function App() {
     };
   }, [isReady, mobile, reducedMotion]);
 
-  useEffect(() => () => window.clearTimeout(transitionTimerRef.current), []);
+  useEffect(() => () => {
+    window.clearTimeout(transitionTimerRef.current);
+    window.clearTimeout(monogramTimerRef.current);
+  }, []);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -1044,9 +1470,15 @@ export default function App() {
       </div>
 
       <header className="site-header">
-        <button className="monogram" onClick={() => goTo(0)} aria-label="К началу">И<span>×</span>Д</button>
-        <div className="site-header__date">25–26 · 09 · 26</div>
+        <button className="monogram" onClick={handleMonogramClick} aria-label="К началу">И<span>×</span>Д</button>
+        <div className="site-header__meta">
+          <MusicToggle />
+          <div className="site-header__date">25–26 · 09 · 26</div>
+        </div>
       </header>
+
+
+
 
       <AnimatePresence initial={false} mode="wait" custom={direction}>
         {isReady && <motion.section
