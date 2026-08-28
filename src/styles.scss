@@ -431,9 +431,10 @@ h2 em { font-weight: 500; }
 .invite-copy h2 { margin-bottom: 24px; color: #7d2636; font-size: clamp(56px, 7vw, 108px); font-style: italic; }
 .invite-statement { margin: 0; font: 500 clamp(32px, 3.3vw, 53px)/.98 "Cormorant Garamond Variable", serif; }
 .invite-collage { position: relative; height: 100%; }
-.photo-couple-cutout { z-index: 4; bottom: 0; left: -6%; width: 58%; height: 81%; }
-.photo-polaroid { top: 11%; right: 1%; width: 48%; height: 74%; }
-.photo-invite-rings { top: 16%; right: -1%; width: 51%; height: 63%; }
+.photo-invite-car { z-index: 4; bottom: 5%; left: -10%; width: 96%; height: 61%; }
+.photo-invite-car img { filter: drop-shadow(0 28px 30px rgba(25, 20, 22, .3)); }
+.photo-invite-rings { z-index: 5; top: 8%; right: -2%; width: 49%; height: 48%; }
+.photo-invite-rings img { filter: drop-shadow(0 18px 20px rgba(64, 50, 47, .22)); transform-origin: 54% 50%; }
 
 /* Events */
 .event-layout { position: relative; display: grid; grid-template-columns: .65fr 1.15fr .8fr; align-items: center; gap: 4vw; }
@@ -854,9 +855,8 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
   .invite-copy h2 { margin-bottom: 10px; font-size: 49px; }
   .invite-statement { font-size: clamp(29px, 9vw, 38px); }
   .invite-collage { width: 100%; height: min(49vh, 420px); }
-  .photo-couple-cutout { left: -8%; width: 58%; height: 81%; }
-  .photo-polaroid { top: 8%; right: -3%; width: 54%; height: 80%; }
-  .photo-invite-rings { top: 17%; right: -4%; width: 58%; height: 58%; }
+  .photo-invite-car { bottom: 3%; left: -11%; width: 98%; height: 53%; }
+  .photo-invite-rings { top: 8%; right: -5%; width: 58%; height: 50%; }
 
   .event-layout { display: block; position: relative; }
   .event-number { position: absolute; z-index: 1; top: 1%; left: -2%; margin: 0; font-size: 88px; }

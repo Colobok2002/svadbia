@@ -9,7 +9,6 @@ import girl from "./assets/figma/raw-01.png";
 import sleepingBaby from "./assets/figma/raw-02.png";
 import childhoodWeddingA from "./assets/figma/raw-08.png";
 import heartLineA from "./assets/figma/raw-09.png";
-import friendsA from "./assets/figma/raw-10.png";
 import heart from "./assets/figma/raw-15.png";
 import celebrationBbq from "./assets/figma/celebration-bbq.jpg";
 import celebrationConcert from "./assets/figma/celebration-concert.jpg";
@@ -21,6 +20,7 @@ import celebrationSauna from "./assets/figma/celebration-sauna.jpg";
 import celebrationToast from "./assets/figma/celebration-toast.jpg";
 import heroWeddingPhoto from "./assets/figma/slide-1.png";
 import inviteRings from "./assets/figma/invite-rings.png";
+import inviteCar from "./assets/figma/kar.png";
 import registryKids from "./assets/figma/registry-kids.png";
 import storyArcherPhoto from "./assets/figma/story-archer.png";
 import storyKeysPhoto from "./assets/figma/story-keys.png";
@@ -37,7 +37,7 @@ const preloadSources = [
   storyKeysPhoto,
   childhoodWeddingA,
   heartLineA,
-  friendsA,
+  inviteCar,
   celebrationHouse,
   celebrationJacuzzi,
   celebrationSauna,
@@ -221,6 +221,27 @@ const stagger = {
 const reveal = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.74, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const inviteCarReveal = {
+  hidden: { opacity: 0, x: 150, y: 22, rotate: 3 },
+  show: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    rotate: 0,
+    transition: { duration: 1.05, ease: [0.16, 1, 0.3, 1] },
+  },
+};
+
+const inviteRingsReveal = {
+  hidden: { opacity: 0, scale: 0.68, rotate: -24 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    transition: { duration: 0.9, delay: 0.16, ease: [0.16, 1, 0.3, 1] },
+  },
 };
 
 const revealWithoutFade = {
@@ -419,24 +440,45 @@ function getInitialIndex() {
   return index < 0 ? 0 : index;
 }
 
-function Photo({ src, alt, className = "", rotate = 0, delay = 0 }) {
+function Photo({ src, alt, className = "", rotate = 0, delay = 0, motionPreset = "float" }) {
   const reducedMotion = useReducedMotion();
   const canFloat = !reducedMotion && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const variants = motionPreset === "car"
+    ? inviteCarReveal
+    : motionPreset === "rings" ? inviteRingsReveal : reveal;
+
+  const idleAnimation = reducedMotion
+    ? { x: 0, y: 0, rotate, scale: 1 }
+    : motionPreset === "car"
+      ? { x: [0, 4, 0], y: [0, -3, 0], rotate: [rotate, rotate + 0.35, rotate], scale: 1 }
+      : motionPreset === "rings"
+        ? { x: 0, y: [0, -7, 0], rotate: [rotate, rotate + 4, rotate], scale: [1, 1.045, 1] }
+        : canFloat
+          ? { x: 0, y: [0, -7, 0], rotate: [rotate, rotate + 0.7, rotate], scale: 1 }
+          : { x: 0, y: 0, rotate, scale: 1 };
+
+  const idleTransition = reducedMotion
+    ? { duration: 0 }
+    : motionPreset === "car"
+      ? { duration: 3.6, delay: 1.05, repeat: Infinity, ease: "easeInOut" }
+      : motionPreset === "rings"
+        ? { duration: 4.2, delay: 0.9, repeat: Infinity, ease: "easeInOut" }
+        : canFloat
+          ? { duration: 7.5, delay, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 0 };
 
   return (
     <motion.figure
       className={`editorial-photo ${className}`}
-      variants={reveal}
+      variants={variants}
       whileHover={{ scale: 1.025, rotate: rotate * 0.35, y: -5 }}
       transition={{ type: "spring", stiffness: 180, damping: 18 }}
     >
       <motion.img
         src={src}
         alt={alt}
-        animate={canFloat ? { y: [0, -7, 0], rotate: [rotate, rotate + 0.7, rotate] } : { y: 0, rotate }}
-        transition={canFloat
-          ? { duration: 7.5, delay, repeat: Infinity, ease: "easeInOut" }
-          : { duration: 0 }}
+        animate={idleAnimation}
+        transition={idleTransition}
       />
     </motion.figure>
   );
@@ -644,11 +686,11 @@ function Invite({ guest }) {
       <motion.div className="invite-copy" variants={reveal}>
         <p className="eyebrow">Теперь официально</p>
         <h2>{guest.salutation},</h2>
-        <p className="invite-statement">мы скоро станем семьёй — и очень хотим, чтобы в этот день вы были рядом.</p>
+        <p className="invite-statement">мы скоро станем семьёй — и очень хотим, чтобы в эти дни вы были рядом.</p>
       </motion.div>
       <div className="invite-collage">
-        <Photo src={friendsA} alt="Илья и Дарина" className="photo-couple-cutout" rotate={-2} />
-        <Photo src={inviteRings} alt="Обручальные кольца" className="photo-polaroid photo-invite-rings" rotate={6} delay={1.4} />
+        <Photo src={inviteCar} alt="Свадебная машина семьи Суетологов" className="photo-invite-car" rotate={-1} motionPreset="car" />
+        <Photo src={inviteRings} alt="Обручальные кольца" className="photo-invite-rings" rotate={5} motionPreset="rings" />
       </div>
     </motion.div>
   );
