@@ -1270,8 +1270,8 @@ function Rsvp({ guest }) {
 
   const celebrateAndJoin = (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
     if (celebrating) {
-      event.preventDefault();
       return;
     }
 
@@ -1287,8 +1287,7 @@ function Rsvp({ guest }) {
     countdownTimerRef.current = window.setInterval(tick, 1200);
     celebrationTimerRef.current = window.setTimeout(() => {
       window.clearInterval(countdownTimerRef.current);
-      setCelebrating(false);
-      setCountdown(null);
+      window.location.assign(telegramInviteUrl);
     }, 3800);
   };
 
@@ -1307,8 +1306,6 @@ function Rsvp({ guest }) {
       <motion.a
         className={`primary-action primary-action--light${celebrating ? " is-celebrating" : ""}`}
         href={telegramInviteUrl}
-        target="_blank"
-        rel="noreferrer"
         onClick={celebrateAndJoin}
         variants={reveal}
         whileHover={{ scale: 1.03 }}
